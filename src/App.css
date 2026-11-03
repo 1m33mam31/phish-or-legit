@@ -269,3 +269,83 @@
   font-size: 0.9rem;
   color: #94a3b8;
 }
+/* menu */
+.subtitle {
+  text-align: center;
+  color: #94a3b8;
+  margin: 0 0 1rem;
+}
+.modes {
+  display: grid;
+  gap: 1rem;
+}
+.mode-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-align: left;
+  padding: 1rem 1.25rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  transition: transform 0.1s, border-color 0.1s;
+}
+.mode-card:hover {
+  transform: translateY(-2px);
+  border-color: #3b82f6;
+}
+.mode-emoji {
+  font-size: 2rem;
+}
+.mode-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.mode-text span {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+.mode-text em {
+  font-style: normal;
+  color: #7dd3fc;
+  font-size: 0.85rem;
+}
+
+.back {
+  background: none;
+  color: #94a3b8;
+  padding: 0;
+}
+
+/* red flag hunt */
+.hunt {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 0.6rem;
+}
+.hunt-q {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+.option {
+  text-align: left;
+  padding: 0.8rem 1rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+}
+.option:hover:not(:disabled) {
+  border-color: #3b82f6;
+}
+.option:disabled {
+  cursor: default;
+}
+.option.correct {
+  background: #14532d;
+  border-color: #22c55e;
+}
+.option.wrong {
+  background: #7f1d1d;
+  border-color: #ef4444;
+}

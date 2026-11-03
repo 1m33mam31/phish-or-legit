@@ -2,13 +2,96 @@ import { useState } from "react";
 import scenarios from "./data/scenarios.json";
 import "./App.css";
 
-function shuffle(list) {
+const MODES = {
+  daily: {
+    label: "Daily Challenge",
+    emoji: "📅",
+    desc: "5 questions, same for everyone today. One try.",
+    size: 5,
+  },
+  classic: {
+    label: "Classic",
+    emoji: "🎣",
+    desc: "All 10 scenarios in random order.",
+    size: scenarios.length,
+  },
+  hunt: {
+    label: "Red Flag Hunt",
+    emoji: "🚩",
+    desc: "Spot the real warning sign in 5 scams.",
+    size: 5,
+  },
+};
+
+function hashString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function shuffle(list, rand = Math.random) {
   const copy = [...list];
   for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rand() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+}
+
+function todayKey() {
+  return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+}
+
+function load(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function save(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // storage unavailable, ignore
+  }
+}
+
+function buildDeck(mode) {
+  if (mode === "daily") {
+    const rand = mulberry32(hashString(todayKey()));
+    return shuffle(scenarios, rand)
+      .slice(0, MODES.daily.size)
+      .map((item) => ({ item }));
+  }
+  if (mode === "hunt") {
+    const phish = scenarios.filter((s) => s.answer === "phish");
+    const decoyPool = scenarios.flatMap((s) => s.safeSigns || []);
+    return shuffle(phish)
+      .slice(0, MODES.hunt.size)
+      .map((item) => {
+        const correct =
+          item.redFlags[Math.floor(Math.random() * item.redFlags.length)];
+        const decoys = shuffle(decoyPool).slice(0, 3);
+        return { item, correct, options: shuffle([correct, ...decoys]) };
+      });
+  }
+  return shuffle(scenarios).map((item) => ({ item }));
 }
 
 function parseSender(from) {
@@ -84,7 +167,8 @@ function Scenario({ item, revealed }) {
 }
 
 export default function App() {
-  const [deck, setDeck] = useState(() => shuffle(scenarios));
+  const [mode, setMode] = useState(null);
+  const [deck, setDeck] = useState([]);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState(null);
   const [score, setScore] = useState(0);
@@ -92,14 +176,39 @@ export default function App() {
   const [bestStreak, setBestStreak] = useState(0);
   const [finished, setFinished] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [best, setBest] = useState(() => load("pol-best", {}));
+  const [daily, setDaily] = useState(() => load("pol-daily", null));
 
-  const current = deck[index];
-  const correct = picked === current.answer;
+  const playedToday = daily && daily.date === todayKey();
+
+  function startMode(m) {
+    setMode(m);
+    setDeck(buildDeck(m));
+    setIndex(0);
+    setPicked(null);
+    setStreak(0);
+    setBestStreak(0);
+    setCopied(false);
+    if (m === "daily" && playedToday) {
+      setScore(daily.score);
+      setFinished(true);
+    } else {
+      setScore(0);
+      setFinished(false);
+    }
+  }
+
+  function backToMenu() {
+    setMode(null);
+  }
 
   function choose(choice) {
     if (picked) return;
+    const entry = deck[index];
+    const right =
+      mode === "hunt" ? choice === entry.correct : choice === entry.item.answer;
     setPicked(choice);
-    if (choice === current.answer) {
+    if (right) {
       const newStreak = streak + 1;
       setScore(score + 1);
       setStreak(newStreak);
@@ -109,29 +218,73 @@ export default function App() {
     }
   }
 
+  function finish() {
+    setFinished(true);
+    if (mode === "daily") {
+      const result = { date: todayKey(), score };
+      save("pol-daily", result);
+      setDaily(result);
+    } else if (score > (best[mode] ?? 0)) {
+      const updated = { ...best, [mode]: score };
+      save("pol-best", updated);
+      setBest(updated);
+    }
+  }
+
   function next() {
     if (index + 1 >= deck.length) {
-      setFinished(true);
+      finish();
     } else {
       setIndex(index + 1);
       setPicked(null);
     }
   }
 
-  function restart() {
-    setDeck(shuffle(scenarios));
-    setIndex(0);
-    setPicked(null);
-    setScore(0);
-    setStreak(0);
-    setBestStreak(0);
-    setFinished(false);
-    setCopied(false);
+  // ---------- Menu ----------
+  if (!mode) {
+    return (
+      <main className="app">
+        <h1 className="title">🎣 Phish or Legit?</h1>
+        <p className="subtitle">Pick a mode</p>
+        <div className="modes">
+          {Object.entries(MODES).map(([key, m]) => {
+            let badge = "";
+            if (key === "daily") {
+              badge = playedToday
+                ? `Today: ${daily.score}/${m.size} ✓`
+                : "Not played today";
+            } else if (best[key] != null) {
+              badge = `Best: ${best[key]}/${m.size}`;
+            }
+            return (
+              <button
+                key={key}
+                className="mode-card"
+                onClick={() => startMode(key)}
+              >
+                <span className="mode-emoji">{m.emoji}</span>
+                <span className="mode-text">
+                  <strong>{m.label}</strong>
+                  <span>{m.desc}</span>
+                  {badge && <em>{badge}</em>}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </main>
+    );
   }
 
+  // ---------- Results ----------
   if (finished) {
-    const rank = getRank(score, deck.length);
-    const shareText = `I scored ${score}/${deck.length} on Phish or Legit? and earned the rank ${rank.title}. Can you beat me?`;
+    const total = deck.length;
+    const rank = getRank(score, total);
+    const label = MODES[mode].label;
+    const shareText =
+      mode === "daily"
+        ? `Phish or Legit? Daily ${todayKey()}: ${score}/${total}. Can you beat me? ${window.location.href}`
+        : `I scored ${score}/${total} in ${label} on Phish or Legit? (${rank.title}). Can you beat me? ${window.location.href}`;
 
     async function copyShare() {
       try {
@@ -146,30 +299,50 @@ export default function App() {
       <main className="app">
         <h1 className="title">🎣 Phish or Legit?</h1>
         <div className="results">
+          <p className="tag">{label}</p>
           <div className="rank-emoji">{rank.emoji}</div>
           <h2 className="rank-title">{rank.title}</h2>
           <p>
-            You scored {score} / {deck.length}. Best streak: {bestStreak}
+            You scored {score} / {total}.
+            {mode !== "hunt" && ` Best streak: ${bestStreak}`}
           </p>
+          {mode === "daily" && (
+            <p className="tag">Come back tomorrow for a new set.</p>
+          )}
           <div className="share">{shareText}</div>
-          <button className="primary" onClick={restart}>
-            Play again
-          </button>
+          {mode !== "daily" && (
+            <button className="primary" onClick={() => startMode(mode)}>
+              Play again
+            </button>
+          )}
           <button className="secondary" onClick={copyShare}>
             {copied ? "Copied!" : "Copy score"}
+          </button>
+          <button className="secondary" onClick={backToMenu}>
+            Menu
           </button>
         </div>
       </main>
     );
   }
 
+  // ---------- Question ----------
+  const entry = deck[index];
+  const current = entry.item;
+  const correct =
+    mode === "hunt" ? picked === entry.correct : picked === current.answer;
   const hints =
     current.answer === "phish" ? current.redFlags : current.safeSigns;
   const progress = ((index + (picked ? 1 : 0)) / deck.length) * 100;
 
   return (
     <main className="app">
-      <h1 className="title">🎣 Phish or Legit?</h1>
+      <button className="back" onClick={backToMenu}>
+        ← Menu
+      </button>
+      <h1 className="title">
+        {MODES[mode].emoji} {MODES[mode].label}
+      </h1>
 
       <div className="progress">
         <div className="progress-fill" style={{ width: `${progress}%` }} />
@@ -179,29 +352,54 @@ export default function App() {
           Question {index + 1} / {deck.length}
         </span>
         <span className="chip">Score {score}</span>
-        <span className="chip">🔥 Streak {streak}</span>
+        {mode !== "hunt" && <span className="chip">🔥 Streak {streak}</span>}
       </div>
 
       <div className={`stage ${picked && !correct ? "shake" : ""}`}>
         <Scenario item={current} revealed={Boolean(picked)} />
       </div>
 
-      {!picked && (
-        <div className="buttons">
-          <button className="btn-phish" onClick={() => choose("phish")}>
-            🎣 Phish
-          </button>
-          <button className="btn-legit" onClick={() => choose("legit")}>
-            ✅ Legit
-          </button>
+      {mode === "hunt" ? (
+        <div className="hunt">
+          <p className="hunt-q">This is a scam. Which one is a real warning sign?</p>
+          {entry.options.map((opt) => {
+            let cls = "option";
+            if (picked) {
+              if (opt === entry.correct) cls += " correct";
+              else if (opt === picked) cls += " wrong";
+            }
+            return (
+              <button
+                key={opt}
+                className={cls}
+                onClick={() => choose(opt)}
+                disabled={Boolean(picked)}
+              >
+                {opt}
+              </button>
+            );
+          })}
         </div>
+      ) : (
+        !picked && (
+          <div className="buttons">
+            <button className="btn-phish" onClick={() => choose("phish")}>
+              🎣 Phish
+            </button>
+            <button className="btn-legit" onClick={() => choose("legit")}>
+              ✅ Legit
+            </button>
+          </div>
+        )
       )}
 
       {picked && (
         <div className={`feedback ${correct ? "good" : "wrong"}`}>
           <h3>
-            {correct ? "Correct!" : "Not quite."} This was{" "}
-            {current.answer === "phish" ? "a phish." : "legit."}
+            {correct ? "Correct!" : "Not quite."}{" "}
+            {mode === "hunt"
+              ? "Here is the full picture."
+              : `This was ${current.answer === "phish" ? "a phish." : "legit."}`}
           </h3>
           <p>{current.explanation}</p>
           <strong>
