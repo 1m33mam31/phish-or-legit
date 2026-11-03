@@ -1,0 +1,182 @@
+[
+  {
+    "id": 1,
+    "type": "sms",
+    "difficulty": "easy",
+    "from": "AusPost (0400 000 000)",
+    "subject": null,
+    "body": "Australia Post: Your parcel could not be delivered. Pay a $2.95 redelivery fee within 24 hours or it will be returned to sender.",
+    "link": "http://auspost-redelivery.example/pay",
+    "answer": "phish",
+    "redFlags": [
+      "Comes from a random mobile number, not an official channel",
+      "Urgent 24 hour deadline",
+      "Asks for a payment through a link",
+      "Link domain is not the real Australia Post domain"
+    ],
+    "safeSigns": [],
+    "explanation": "Delivery scams use small fees to steal card details. If you are expecting a parcel, open the official app or website and enter the tracking number yourself."
+  },
+  {
+    "id": 2,
+    "type": "email",
+    "difficulty": "medium",
+    "from": "myGov Support <no-reply@mygov-secure-login.example>",
+    "subject": "Action required: your myGov account has been locked",
+    "body": "We detected unusual activity on your myGov account. To avoid permanent suspension, verify your identity within 12 hours by logging in below.",
+    "link": "http://mygov-secure-login.example/verify",
+    "answer": "phish",
+    "redFlags": [
+      "Sender domain has extra words like 'secure-login'",
+      "Threatens suspension to create panic",
+      "Asks you to log in through an email link",
+      "Short deadline"
+    ],
+    "safeSigns": [],
+    "explanation": "Government services do not ask you to verify your identity through email links. Type the official address into your browser or use the official app instead."
+  },
+  {
+    "id": 3,
+    "type": "sms",
+    "difficulty": "easy",
+    "from": "0411 000 000",
+    "subject": null,
+    "body": "Your toll invoice is overdue. Pay now to avoid a $150 late fee and possible licence suspension.",
+    "link": "http://toll-payment-center.example/invoice",
+    "answer": "phish",
+    "redFlags": [
+      "Does not name the toll company or your vehicle",
+      "Threatens a big fee and licence suspension",
+      "Generic link with no real company domain",
+      "Unknown mobile number"
+    ],
+    "safeSigns": [],
+    "explanation": "Real toll notices usually include specific trip details and point you to the official site or app. Vague, threatening texts with a payment link are a classic scam."
+  },
+  {
+    "id": 4,
+    "type": "email",
+    "difficulty": "medium",
+    "from": "Spotify <no-reply@spotify.example>",
+    "subject": "Your receipt for October",
+    "body": "Thanks for being Premium. Your payment of $13.99 was successful. No action is needed.",
+    "link": null,
+    "answer": "legit",
+    "redFlags": [],
+    "safeSigns": [
+      "No urgency or threats",
+      "No link asking you to log in",
+      "Matches a payment you expect",
+      "Tells you no action is needed"
+    ],
+    "explanation": "This is a plain receipt. It asks you to do nothing and does not push you to click. If you are unsure, check your subscription inside the app."
+  },
+  {
+    "id": 5,
+    "type": "email",
+    "difficulty": "medium",
+    "from": "IT Service Desk <helpdesk@uni-it-support.example>",
+    "subject": "Your password expires today",
+    "body": "Your university password will expire in 3 hours. Click below to keep your password and avoid losing access to email and Moodle.",
+    "link": "http://uni-it-support.example/keep-password",
+    "answer": "phish",
+    "redFlags": [
+      "Sender domain is not the real university domain",
+      "Short deadline of 3 hours",
+      "Asks you to enter your password through a link",
+      "Threatens loss of access"
+    ],
+    "safeSigns": [],
+    "explanation": "Students are a common target for credential theft. Real password resets are done through the official university portal, not through links in surprise emails."
+  },
+  {
+    "id": 6,
+    "type": "email",
+    "difficulty": "easy",
+    "from": "Student Life <events@university.example>",
+    "subject": "Free pizza at the Cyber Club meetup, Thursday 5pm",
+    "body": "Come along to our first meetup of the semester. Room details are on the events page. No RSVP needed, just show up.",
+    "link": null,
+    "answer": "legit",
+    "redFlags": [],
+    "safeSigns": [
+      "No login or personal details requested",
+      "No link or attachment",
+      "Nothing urgent or threatening",
+      "Normal, expected content from a student club"
+    ],
+    "explanation": "This is an ordinary event notice. It does not ask for money, passwords or clicks. Not every email is a scam, and learning to relax on safe ones matters too."
+  },
+  {
+    "id": 7,
+    "type": "message",
+    "difficulty": "medium",
+    "from": "Listing contact: 'Sarah M.'",
+    "subject": "2 bed apartment, $320/week, near campus",
+    "body": "Hi! I'm overseas for work so I can't do inspections. Send a $500 holding deposit and I'll post you the keys. Many people are interested so please be quick.",
+    "link": null,
+    "answer": "phish",
+    "redFlags": [
+      "Price is far below the market rate",
+      "Owner is conveniently overseas",
+      "Wants a deposit before any inspection",
+      "Pressure from other interested people"
+    ],
+    "safeSigns": [],
+    "explanation": "Fake rental listings target students looking for housing. Never pay a deposit before seeing the property, and check listings through trusted agents."
+  },
+  {
+    "id": 8,
+    "type": "dm",
+    "difficulty": "hard",
+    "from": "Instagram DM from a friend (@jess.m)",
+    "subject": null,
+    "body": "omg is this you in this video?? 😭 so embarrassing",
+    "link": "http://insta-video-view.example/watch",
+    "answer": "phish",
+    "redFlags": [
+      "Out-of-character message with no context",
+      "Emotional hook to make you click fast",
+      "Link goes to a site that is not Instagram",
+      "Likely a hacked account, even though the sender is a real friend"
+    ],
+    "safeSigns": [],
+    "explanation": "Scammers hijack accounts and message the owner's friends. Message your friend on another app to check, and never log in through a link someone sends."
+  },
+  {
+    "id": 9,
+    "type": "sms",
+    "difficulty": "hard",
+    "from": "YourBank",
+    "subject": null,
+    "body": "We noticed a card payment of $84.20 at a store you don't usually shop at. If this wasn't you, open the YourBank app and review your recent transactions.",
+    "link": null,
+    "answer": "legit",
+    "redFlags": [],
+    "safeSigns": [
+      "Tells you to open the app yourself, not click a link",
+      "No request for passwords, PINs or codes",
+      "No threat or countdown",
+      "Gives a specific transaction you can verify in your own app"
+    ],
+    "explanation": "Real bank alerts send you to your own app and never ask for sensitive details by text. Even so, check the transaction in the app rather than replying."
+  },
+  {
+    "id": 10,
+    "type": "email",
+    "difficulty": "medium",
+    "from": "Hiring Team <careers@global-talent-hub.example>",
+    "subject": "Job offer: Remote Admin Assistant, $45/hr",
+    "body": "Congratulations, you are hired with no interview needed. To set up payroll, send your bank details and ID photo. We will also send a cheque for equipment. Please buy gift cards for the supplies and send us the codes.",
+    "link": null,
+    "answer": "phish",
+    "redFlags": [
+      "Hired without an interview or application",
+      "Pay is unusually high for the work",
+      "Asks for bank details and ID upfront",
+      "Gift cards and cheque for equipment is a known scam pattern"
+    ],
+    "safeSigns": [],
+    "explanation": "Job scams often target students who need work. A real employer will not ask you to buy gift cards or pay for supplies out of your own pocket."
+  }
+]
