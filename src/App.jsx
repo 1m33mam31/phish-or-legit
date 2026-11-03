@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import base from "./data/scenarios.json";
 import more from "./data/scenarios-more.json";
 import "./App.css";
@@ -33,6 +33,15 @@ const MODES = {
 };
 
 const DAILY_START = "2026-11-01";
+
+const CONFETTI_COLORS = [
+  "#3b82f6",
+  "#22c55e",
+  "#ef4444",
+  "#f59e0b",
+  "#ec4899",
+  "#a78bfa",
+];
 
 function hashString(str) {
   let h = 2166136261;
@@ -209,6 +218,95 @@ function Scenario({ item, revealed }) {
   );
 }
 
+// Rotating "Real or fake?" teaser. The set changes daily and never shows answers.
+function Teaser() {
+  const [items] = useState(() =>
+    shuffle(
+      scenarios.filter((s) => s.type !== "email" && s.body.length <= 95),
+      mulberry32(hashString(todayKey()))
+    ).slice(0, 6)
+  );
+  const [i, setI] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % items.length), 4500);
+    return () => clearInterval(t);
+  }, [items.length]);
+
+  const item = items[i];
+
+  return (
+    <div className="teaser">
+      <div className="teaser-label">
+        <span>🤔 Would you fall for this?</span>
+        <span className="teaser-live">● Live</span>
+      </div>
+      <div className="teaser-inner" key={item.id}>
+        <div className="teaser-from">{item.from}</div>
+        <p className="teaser-body">“{item.body}”</p>
+        <div className="teaser-q">Real or fake? Pick a mode to find out 👇</div>
+      </div>
+      <div className="teaser-dots">
+        {items.map((s, n) => (
+          <i key={s.id} className={n === i ? "on" : ""} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Confetti pieces use fixed values (no randomness), so every burst looks lively
+function Confetti() {
+  const pieces = Array.from({ length: 60 }, (_, i) => ({
+    left: (i * 37) % 100,
+    delay: (i % 12) * 0.1,
+    duration: 2.4 + (i % 5) * 0.4,
+    size: 6 + (i % 4) * 3,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    spin: (i % 2 ? 1 : -1) * (360 + (i % 5) * 120),
+  }));
+
+  return (
+    <div className="confetti" aria-hidden="true">
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          style={{
+            left: `${p.left}%`,
+            width: p.size,
+            height: p.size * 1.6,
+            background: p.color,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            "--spin": `${p.spin}deg`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Counts the score up from 0 on the results screen
+function CountUp({ value }) {
+  const [n, setN] = useState(0);
+
+  useEffect(() => {
+    if (value === 0) return;
+    let current = 0;
+    const t = setInterval(
+      () => {
+        current += 1;
+        setN(current);
+        if (current >= value) clearInterval(t);
+      },
+      Math.max(80, Math.floor(1000 / value))
+    );
+    return () => clearInterval(t);
+  }, [value]);
+
+  return <>{n}</>;
+}
+
 function Intro({ onStart }) {
   return (
     <main className="app intro">
@@ -275,6 +373,7 @@ export default function App() {
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
   const [copied, setCopied] = useState(false);
   const [daily, setDaily] = useState(() => load("pol-daily", null));
 
@@ -288,6 +387,7 @@ export default function App() {
     setStreak(0);
     setBestStreak(0);
     setCopied(false);
+    setCelebrate(false);
     if (m === "daily" && playedToday) {
       setScore(daily.score);
       setFinished(true);
@@ -319,6 +419,7 @@ export default function App() {
 
   function finish() {
     setFinished(true);
+    setCelebrate(score === deck.length);
     if (mode === "daily") {
       const result = { date: todayKey(), score };
       save("pol-daily", result);
@@ -348,6 +449,8 @@ export default function App() {
         <span className="float f1" aria-hidden="true">🎣</span>
         <span className="float f2" aria-hidden="true">🛡️</span>
         <span className="float f3" aria-hidden="true">🚩</span>
+        <span className="float f4" aria-hidden="true">📧</span>
+        <span className="float f5" aria-hidden="true">🔒</span>
 
         <button className="back" onClick={() => setStarted(false)}>
           ← Home
@@ -356,6 +459,8 @@ export default function App() {
           <span className="bounce">🎣</span> Phish <em>or</em> Legit?
         </h1>
         <p className="subtitle">Choose your challenge</p>
+
+        <Teaser />
 
         <div className="modes">
           {Object.entries(MODES).map(([key, m], i) => {
@@ -372,7 +477,7 @@ export default function App() {
               <button
                 key={key}
                 className={`mode-card ${m.accent}`}
-                style={{ animationDelay: `${i * 0.1}s` }}
+                style={{ animationDelay: `${i * 0.1 + 0.1}s` }}
                 onClick={() => startMode(key)}
               >
                 <span className="mode-icon">{m.emoji}</span>
@@ -416,14 +521,19 @@ export default function App() {
     return (
       <main className="app">
         <h1 className="title">🎣 Phish or Legit?</h1>
-        <div className="results">
-          <p className="tag">{label}</p>
+        {celebrate && <Confetti />}
+        <div className={`results pop ${celebrate ? "perfect" : ""}`}>
+          <p className="tag">
+            {celebrate ? "🎉 Perfect score! · " : ""}
+            {label}
+          </p>
           <div className="rank-emoji">{rank.emoji}</div>
           <h2 className="rank-title">{rank.title}</h2>
-          <p>
-            You scored {score} / {total}.
-            {mode !== "hunt" && ` Best streak: ${bestStreak}`}
-          </p>
+          <div className="big-score">
+            <CountUp value={score} />
+            <span>/ {total}</span>
+          </div>
+          {mode !== "hunt" && <p>Best streak: {bestStreak}</p>}
           {mode === "daily" && (
             <p className="tag">Come back tomorrow for a new set.</p>
           )}

@@ -647,3 +647,195 @@
     animation: none;
   }
 }
+/* ---------- lively background ---------- */
+body {
+  background: linear-gradient(-45deg, #0f172a, #172554, #0f2a3d, #2a1245);
+  background-size: 400% 400%;
+  background-attachment: fixed;
+  animation: bgshift 22s ease infinite;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.3), transparent 38%),
+    radial-gradient(circle at 85% 30%, rgba(34, 197, 94, 0.2), transparent 38%),
+    radial-gradient(circle at 50% 95%, rgba(236, 72, 153, 0.2), transparent 42%);
+  animation: drift 18s ease-in-out infinite alternate;
+}
+@keyframes bgshift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes drift {
+  from { transform: translate(-3%, -2%) scale(1); }
+  to { transform: translate(3%, 3%) scale(1.15); }
+}
+
+/* floating emojis sit at the screen edges, away from the content */
+.float {
+  position: fixed;
+  font-size: 2rem;
+  opacity: 0.22;
+}
+.f1 { top: 16%; left: 6%; }
+.f2 { top: 36%; right: 6%; }
+.f3 { bottom: 18%; left: 9%; }
+.f4 { top: 62%; right: 9%; animation-delay: 3s; }
+.f5 { top: 8%; right: 14%; font-size: 1.6rem; animation-delay: 1.5s; }
+@media (max-width: 700px) {
+  .float { display: none; }
+}
+
+/* ---------- teaser card ---------- */
+.teaser {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(236, 72, 153, 0.14));
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.2rem;
+  min-height: 130px;
+  overflow: hidden;
+  animation: rise 0.5s 0.05s both;
+}
+.teaser-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+}
+.teaser-live {
+  color: #fbbf24;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.teaser-inner {
+  animation: teaserIn 0.5s both;
+}
+.teaser-from {
+  font-weight: 700;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+.teaser-body {
+  margin: 0.35rem 0 0.5rem;
+  color: #f1f5f9;
+  line-height: 1.45;
+}
+.teaser-q {
+  font-weight: 800;
+  font-size: 0.95rem;
+  background: linear-gradient(90deg, #60a5fa, #34d399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.teaser-dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 0.6rem;
+}
+.teaser-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #475569;
+  transition: width 0.3s, background 0.3s;
+}
+.teaser-dots i.on {
+  width: 18px;
+  background: #3b82f6;
+}
+@keyframes teaserIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- bigger results screen ---------- */
+.results.pop {
+  animation: popIn 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.results .rank-emoji {
+  display: inline-block;
+  font-size: 4rem;
+  animation: emojiPop 0.8s 0.2s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+.results .rank-title {
+  background: linear-gradient(90deg, #60a5fa, #34d399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rise 0.5s 0.45s both;
+}
+.big-score {
+  font-size: 3.4rem;
+  font-weight: 800;
+  line-height: 1;
+  margin: 0.4rem 0 0.6rem;
+  animation: rise 0.5s 0.6s both;
+}
+.big-score span {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-left: 0.4rem;
+}
+.results .share,
+.results button {
+  animation: rise 0.5s 0.8s both;
+}
+.results.perfect {
+  animation:
+    popIn 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both,
+    glowPulse 2s ease-in-out 0.6s infinite;
+  border: 1px solid #f59e0b;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85) translateY(20px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes emojiPop {
+  from { transform: scale(0) rotate(-30deg); }
+  to { transform: scale(1) rotate(0); }
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.25); }
+  50% { box-shadow: 0 0 45px rgba(245, 158, 11, 0.55); }
+}
+
+/* ---------- confetti ---------- */
+.confetti {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 50;
+}
+.confetti span {
+  position: absolute;
+  top: -5vh;
+  border-radius: 2px;
+  animation-name: confettiFall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: both;
+}
+@keyframes confettiFall {
+  from { transform: translateY(0) rotate(0); opacity: 1; }
+  to { transform: translateY(110vh) rotate(var(--spin)); opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  body::before {
+    animation: none;
+  }
+  .confetti {
+    display: none;
+  }
+}
