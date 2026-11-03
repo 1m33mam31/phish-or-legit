@@ -196,7 +196,64 @@ function Scenario({ item, revealed }) {
   );
 }
 
+function Intro({ onStart }) {
+  return (
+    <main className="app intro">
+      <div className="glow" />
+      <div className="intro-badge">🛡️ Free · No sign-up · Takes 2 minutes</div>
+      <h1 className="intro-title">
+        Phish <span>or</span> Legit?
+      </h1>
+      <p className="intro-sub">
+        Can you spot a scam before it spots you? Read realistic emails, texts
+        and DMs, then decide if they're safe.
+      </p>
+
+      <div className="intro-demo" aria-hidden="true">
+        <div className="chat sms">
+          <div className="chat-head">
+            <div className="avatar small">A</div>
+            <div className="sender-name">AusPost</div>
+            <div className="chat-type">Text message</div>
+          </div>
+          <div className="bubble">
+            Your parcel is on hold. Pay a $2.95 fee within 24 hours.
+          </div>
+        </div>
+        <div className="demo-pills">
+          <span className="pill pill-phish">🎣 Phish</span>
+          <span className="pill pill-legit">✅ Legit</span>
+        </div>
+      </div>
+
+      <button className="cta" onClick={onStart}>
+        Start playing →
+      </button>
+
+      <div className="steps">
+        <div className="step">
+          <strong>1</strong>
+          <span>Read the message</span>
+        </div>
+        <div className="step">
+          <strong>2</strong>
+          <span>Decide: Phish or Legit</span>
+        </div>
+        <div className="step">
+          <strong>3</strong>
+          <span>Learn the red flags</span>
+        </div>
+      </div>
+
+      <p className="intro-foot">
+        Your scores stay in your browser. Every scam link in the game is fake.
+      </p>
+    </main>
+  );
+}
+
 export default function App() {
+  const [started, setStarted] = useState(false);
   const [mode, setMode] = useState(null);
   const [deck, setDeck] = useState([]);
   const [index, setIndex] = useState(0);
@@ -206,7 +263,6 @@ export default function App() {
   const [bestStreak, setBestStreak] = useState(0);
   const [finished, setFinished] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [best, setBest] = useState(() => load("pol-best", {}));
   const [daily, setDaily] = useState(() => load("pol-daily", null));
 
   const playedToday = daily && daily.date === todayKey();
@@ -254,10 +310,6 @@ export default function App() {
       const result = { date: todayKey(), score };
       save("pol-daily", result);
       setDaily(result);
-    } else if (score > (best[mode] ?? 0)) {
-      const updated = { ...best, [mode]: score };
-      save("pol-best", updated);
-      setBest(updated);
     }
   }
 
@@ -270,6 +322,11 @@ export default function App() {
     }
   }
 
+  // ---------- Intro ----------
+  if (!started) {
+    return <Intro onStart={() => setStarted(true)} />;
+  }
+
   // ---------- Menu ----------
   if (!mode) {
     return (
@@ -278,14 +335,12 @@ export default function App() {
         <p className="subtitle">Pick a mode</p>
         <div className="modes">
           {Object.entries(MODES).map(([key, m]) => {
-            let badge = "";
-            if (key === "daily") {
-              badge = playedToday
-                ? `Today: ${daily.score}/${m.size} ✓`
-                : "Not played today";
-            } else if (best[key] != null) {
-              badge = `Best: ${best[key]}/${m.size}`;
-            }
+            const badge =
+              key === "daily"
+                ? playedToday
+                  ? `Today: ${daily.score}/${m.size} ✓`
+                  : "Not played today"
+                : "";
             return (
               <button
                 key={key}
