@@ -839,3 +839,81 @@ body::before {
     display: none;
   }
 }
+/* ---------- timed mode ---------- */
+.mode-card.orange {
+  --accent: #f59e0b;
+}
+.timer {
+  position: relative;
+  height: 26px;
+  margin: 0 0 1rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.timer-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #22c55e, #f59e0b);
+  transition: width 1s linear;
+}
+.timer.urgent .timer-fill {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+.timer.urgent {
+  animation: pulse 0.8s ease-in-out infinite;
+}
+.timer.frozen {
+  opacity: 0.55;
+  animation: none;
+}
+.timer span {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  line-height: 26px;
+  color: white;
+  text-shadow: 0 1px 2px #0008;
+}
+
+/* ---------- what to do next ---------- */
+.next-steps {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+}
+.next-steps strong {
+  display: block;
+  margin-bottom: 0.4rem;
+}
+.next-steps ol {
+  margin: 0.25rem 0 0.6rem;
+  padding-left: 1.2rem;
+  line-height: 1.5;
+}
+.next-note {
+  margin: 0.4rem 0 0.6rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+.help-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.help-links a {
+  font-size: 0.8rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #3b82f6;
+  color: #93c5fd;
+  text-decoration: none;
+}
+.help-links a:hover {
+  background: rgba(59, 130, 246, 0.2);
+}

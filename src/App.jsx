@@ -5,6 +5,8 @@ import "./App.css";
 
 const scenarios = [...base, ...more];
 
+const TIME_LIMIT = 15;
+
 const MODES = {
   daily: {
     label: "Daily Challenge",
@@ -21,6 +23,14 @@ const MODES = {
     size: 10,
     time: "~3 min",
     accent: "green",
+  },
+  timed: {
+    label: "Timed Mode",
+    emoji: "⏱️",
+    desc: `${TIME_LIMIT} seconds per question. Run out of time and it counts as wrong.`,
+    size: 10,
+    time: "~2 min",
+    accent: "orange",
   },
   hunt: {
     label: "Red Flag Hunt",
@@ -42,6 +52,101 @@ const CONFETTI_COLORS = [
   "#ec4899",
   "#a78bfa",
 ];
+
+// ---------- "What to do next" tips ----------
+const TIP_SETS = {
+  link: [
+    "Don't click links or reply. Delete the message.",
+    "Check your account by opening the official app or typing the real website yourself.",
+    "Report it to Scamwatch.",
+  ],
+  uni: [
+    "Don't enter your login.",
+    "Report it to your university IT or security team.",
+    "If you already entered your password, change it now.",
+  ],
+  callback: [
+    "Don't call the number in the message.",
+    "Check your account in the official app or by typing the real website yourself.",
+    "Report it to Scamwatch.",
+  ],
+  friend: [
+    "Don't click the link or log in anywhere.",
+    "Contact your friend another way so they can secure their account.",
+    "Report the account to the platform and to Scamwatch.",
+  ],
+  support: [
+    "Don't click the link or enter your login.",
+    "Check your account settings inside the app itself.",
+    "Report the account to the platform and to Scamwatch.",
+  ],
+  invest: [
+    "Don't send money or move to a private chat.",
+    "Block the account and report it to the platform.",
+    "Report it to Scamwatch.",
+  ],
+  family: [
+    "Don't send money.",
+    "Call your family member on the number you already have.",
+    "Block the new number and report it to Scamwatch.",
+  ],
+  stranger: [
+    "Don't reply, even to be polite.",
+    "Block the number.",
+    "Report it to Scamwatch.",
+  ],
+  code: [
+    "Never share verification codes with anyone.",
+    "Block the buyer and report them to the marketplace.",
+    "If you shared a code, secure your account and change your password.",
+  ],
+  deposit: [
+    "Don't pay before you can verify it is real.",
+    "Use official agents or ticket resale sites instead.",
+    "Report it to the platform and Scamwatch.",
+  ],
+  bankchange: [
+    "Don't send money to a new account.",
+    "Call your agent on a number you already have to check.",
+    "Report it to Scamwatch.",
+  ],
+  jobfee: [
+    "Don't send money, ID or bank details.",
+    "Check the company or organisation independently.",
+    "Report it to Scamwatch.",
+  ],
+  giftcard: [
+    "Don't buy gift cards or send codes.",
+    "Check with the person in person or through official university channels.",
+    "Report it to uni IT and Scamwatch.",
+  ],
+};
+
+const TIP_IDS = {
+  link: [1, 2, 3, 11, 12, 14, 23, 24, 27, 29, 34, 35, 42, 47, 49],
+  uni: [5, 15],
+  callback: [18],
+  friend: [8, 26],
+  support: [36],
+  invest: [17],
+  family: [20],
+  stranger: [44],
+  code: [21],
+  deposit: [7, 38],
+  bankchange: [40],
+  jobfee: [10, 30, 43],
+  giftcard: [32],
+};
+
+function getTips(item) {
+  const key =
+    Object.keys(TIP_IDS).find((k) => TIP_IDS[k].includes(item.id)) || "link";
+  const steps = [...TIP_SETS[key]];
+  if (item.type === "sms") {
+    steps.push("Forward scam texts to 0429 999 888 (ACMA) to help block them.");
+  }
+  return steps;
+}
 
 function hashString(str) {
   let h = 2166136261;
@@ -141,8 +246,9 @@ function buildDeck(mode) {
         return { item, correct, options: shuffle([correct, ...decoys]) };
       });
   }
+  // classic and timed
   return shuffle(scenarios)
-    .slice(0, MODES.classic.size)
+    .slice(0, MODES[mode].size)
     .map((item) => ({ item }));
 }
 
@@ -375,9 +481,25 @@ export default function App() {
   const [finished, setFinished] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [daily, setDaily] = useState(() => load("pol-daily", null));
 
   const playedToday = daily && daily.date === todayKey();
+
+  // Timed mode countdown: one tick per second, running out counts as wrong
+  useEffect(() => {
+    if (mode !== "timed" || finished || picked || deck.length === 0) return;
+    const t = setTimeout(() => {
+      if (timeLeft <= 1) {
+        setTimeLeft(0);
+        setPicked("timeout");
+        setStreak(0);
+      } else {
+        setTimeLeft(timeLeft - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [mode, finished, picked, deck.length, timeLeft]);
 
   function startMode(m) {
     setMode(m);
@@ -388,6 +510,7 @@ export default function App() {
     setBestStreak(0);
     setCopied(false);
     setCelebrate(false);
+    setTimeLeft(TIME_LIMIT);
     if (m === "daily" && playedToday) {
       setScore(daily.score);
       setFinished(true);
@@ -433,6 +556,7 @@ export default function App() {
     } else {
       setIndex(index + 1);
       setPicked(null);
+      setTimeLeft(TIME_LIMIT);
     }
   }
 
@@ -583,6 +707,20 @@ export default function App() {
         {mode !== "hunt" && <span className="chip">🔥 Streak {streak}</span>}
       </div>
 
+      {mode === "timed" && (
+        <div
+          className={`timer ${timeLeft <= 5 ? "urgent" : ""} ${
+            picked ? "frozen" : ""
+          }`}
+        >
+          <div
+            className="timer-fill"
+            style={{ width: `${(timeLeft / TIME_LIMIT) * 100}%` }}
+          />
+          <span>⏱ {timeLeft}s</span>
+        </div>
+      )}
+
       <div className={`stage ${picked && !correct ? "shake" : ""}`}>
         <Scenario item={current} revealed={Boolean(picked)} />
       </div>
@@ -626,7 +764,11 @@ export default function App() {
       {picked && (
         <div className={`feedback ${correct ? "good" : "wrong"}`}>
           <h3>
-            {correct ? "Correct!" : "Not quite."}{" "}
+            {picked === "timeout"
+              ? "⏰ Time's up!"
+              : correct
+                ? "Correct!"
+                : "Not quite."}{" "}
             {mode === "hunt"
               ? "Here is the full picture."
               : `This was ${current.answer === "phish" ? "a phish." : "legit."}`}
@@ -640,6 +782,45 @@ export default function App() {
               <li key={item}>{item}</li>
             ))}
           </ul>
+
+          {current.answer === "phish" && (
+            <div className="next-steps">
+              <strong>🛟 What to do next</strong>
+              <ol>
+                {getTips(current).map((tip) => (
+                  <li key={tip}>{tip}</li>
+                ))}
+              </ol>
+              <p className="next-note">
+                Already clicked, shared details or paid? Contact your bank
+                first, then get help below.
+              </p>
+              <div className="help-links">
+                <a
+                  href="https://www.scamwatch.gov.au/report-a-scam"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Report to Scamwatch
+                </a>
+                <a
+                  href="https://www.cyber.gov.au"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ReportCyber
+                </a>
+                <a
+                  href="https://www.idcare.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  IDCARE support
+                </a>
+              </div>
+            </div>
+          )}
+
           <button className="primary" onClick={next}>
             {index + 1 >= deck.length ? "See results" : "Next"}
           </button>
