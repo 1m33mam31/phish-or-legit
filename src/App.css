@@ -1,15 +1,34 @@
+/* ---------- layout ---------- */
 .app {
   max-width: 620px;
   margin: 0 auto;
   padding: 1.5rem 1rem 3rem;
 }
-
 .title {
   text-align: center;
   margin: 0.5rem 0 1rem;
   font-size: 1.8rem;
 }
+.subtitle {
+  text-align: center;
+  color: #94a3b8;
+  margin: 0 0 1rem;
+}
+.tag {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0 0 0.5rem;
+}
+.back {
+  background: none;
+  color: #94a3b8;
+  padding: 0;
+}
+.back:hover {
+  color: #e2e8f0;
+}
 
+/* ---------- progress and chips ---------- */
 .progress {
   height: 8px;
   background: #334155;
@@ -21,7 +40,6 @@
   background: linear-gradient(90deg, #3b82f6, #22c55e);
   transition: width 0.4s ease;
 }
-
 .chips {
   display: flex;
   justify-content: space-between;
@@ -38,15 +56,8 @@
 .stage.shake {
   animation: shake 0.4s;
 }
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-8px); }
-  40% { transform: translateX(8px); }
-  60% { transform: translateX(-6px); }
-  80% { transform: translateX(6px); }
-}
 
-/* highlight states after answering */
+/* ---------- highlights ---------- */
 .bad {
   color: #b91c1c;
   background: #fee2e2;
@@ -60,8 +71,28 @@
   border-radius: 4px;
   padding: 0 4px;
 }
+.chat .bad {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.28);
+  box-shadow: inset 0 -2px 0 #ef4444;
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.chat .ok {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.25);
+  box-shadow: inset 0 -2px 0 #22c55e;
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.chat .fakelink.bad,
+.chat .fakelink.ok {
+  display: inline-block;
+}
 
-/* email */
+/* ---------- email card ---------- */
 .window {
   background: #f8fafc;
   color: #0f172a;
@@ -129,7 +160,6 @@
 .mail-link {
   margin-top: 1rem;
 }
-
 .fakelink {
   color: #2563eb;
   text-decoration: underline;
@@ -137,7 +167,7 @@
   cursor: not-allowed;
 }
 
-/* chat style: sms, dm, message */
+/* ---------- chat card (sms, dm, message) ---------- */
 .chat {
   background: #0b1220;
   border: 1px solid #334155;
@@ -188,8 +218,12 @@
   margin-top: 0.5rem;
   color: #7dd3fc;
 }
+.bubble .fakelink.bad,
+.bubble .fakelink.ok {
+  display: inline-block;
+}
 
-/* answer buttons */
+/* ---------- answer buttons ---------- */
 .buttons {
   display: flex;
   gap: 1rem;
@@ -213,7 +247,7 @@
   background: #16a34a;
 }
 
-/* feedback */
+/* ---------- feedback ---------- */
 .feedback {
   margin-top: 1.25rem;
   padding: 1rem 1.25rem;
@@ -247,7 +281,7 @@
   margin-left: 0.5rem;
 }
 
-/* results */
+/* ---------- results ---------- */
 .results {
   text-align: center;
   background: #1e293b;
@@ -268,57 +302,10 @@
   margin: 1rem 0;
   font-size: 0.9rem;
   color: #94a3b8;
-}
-/* menu */
-.subtitle {
-  text-align: center;
-  color: #94a3b8;
-  margin: 0 0 1rem;
-}
-.modes {
-  display: grid;
-  gap: 1rem;
-}
-.mode-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  text-align: left;
-  padding: 1rem 1.25rem;
-  background: #1e293b;
-  color: #e2e8f0;
-  border: 1px solid #334155;
-  transition: transform 0.1s, border-color 0.1s;
-}
-.mode-card:hover {
-  transform: translateY(-2px);
-  border-color: #3b82f6;
-}
-.mode-emoji {
-  font-size: 2rem;
-}
-.mode-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-.mode-text span {
-  color: #94a3b8;
-  font-size: 0.9rem;
-}
-.mode-text em {
-  font-style: normal;
-  color: #7dd3fc;
-  font-size: 0.85rem;
+  word-break: break-word;
 }
 
-.back {
-  background: none;
-  color: #94a3b8;
-  padding: 0;
-}
-
-/* red flag hunt */
+/* ---------- red flag hunt ---------- */
 .hunt {
   margin-top: 1.25rem;
   display: grid;
@@ -349,35 +336,8 @@
   background: #7f1d1d;
   border-color: #ef4444;
 }
-/* readable highlights on dark chat cards */
-.chat .bad {
-  color: #fecaca;
-  background: rgba(239, 68, 68, 0.28);
-  box-shadow: inset 0 -2px 0 #ef4444;
-  text-decoration: none;
-  border-radius: 6px;
-  padding: 2px 8px;
-}
-.chat .ok {
-  color: #bbf7d0;
-  background: rgba(34, 197, 94, 0.25);
-  box-shadow: inset 0 -2px 0 #22c55e;
-  text-decoration: none;
-  border-radius: 6px;
-  padding: 2px 8px;
-}
-.chat .fakelink.bad,
-.chat .fakelink.ok {
-  display: inline-block;
-}
-.chat .fakelink.bad {
-  color: #fecaca;
-}
-.chat .fakelink.ok {
-  color: #bbf7d0;
-}
 
-/* intro screen */
+/* ---------- intro screen ---------- */
 .intro {
   position: relative;
   isolation: isolate;
@@ -428,7 +388,6 @@
   max-width: 400px;
   margin: 0 auto 1.8rem;
   text-align: left;
-  animation: float 4s ease-in-out infinite;
 }
 .intro-demo .chat {
   box-shadow: 0 20px 50px #0008;
@@ -501,27 +460,190 @@
   max-width: 380px;
   margin: 0 auto;
 }
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-@keyframes rise {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
-}
 .intro > *:not(.glow) {
   animation: rise 0.6s both;
 }
 .intro > *:nth-child(3) { animation-delay: 0.08s; }
 .intro > *:nth-child(4) { animation-delay: 0.16s; }
-.intro > *:nth-child(5) { animation-delay: 0.24s; }
+.intro > .intro-demo {
+  animation: rise 0.6s 0.24s both, float 4s ease-in-out 0.9s infinite;
+}
 .intro > *:nth-child(6) { animation-delay: 0.32s; }
 .intro > *:nth-child(7) { animation-delay: 0.4s; }
 
+/* ---------- fun menu ---------- */
+.menu {
+  position: relative;
+  isolation: isolate;
+  padding-top: 2rem;
+}
+.menu-title {
+  text-align: center;
+  font-size: clamp(2rem, 8vw, 3rem);
+  letter-spacing: -0.02em;
+  margin: 0.5rem 0 0.25rem;
+  animation: rise 0.5s both;
+}
+.menu-title em {
+  font-style: normal;
+  background: linear-gradient(90deg, #3b82f6, #22c55e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.bounce {
+  display: inline-block;
+  animation: bounce 1.6s ease-in-out infinite;
+}
+.menu .subtitle {
+  font-size: 1.05rem;
+  margin-bottom: 1.5rem;
+}
+.float {
+  position: absolute;
+  font-size: 1.8rem;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: -1;
+  animation: float 5s ease-in-out infinite;
+}
+.f1 { top: 50px; left: 2%; }
+.f2 { top: 230px; right: 2%; animation-delay: 1s; }
+.f3 { top: 430px; left: 4%; animation-delay: 2s; }
+
+.modes {
+  display: grid;
+  gap: 1rem;
+}
+.mode-card {
+  --accent: #3b82f6;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  text-align: left;
+  padding: 1rem 1.25rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  animation: rise 0.5s both;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.mode-card.green { --accent: #22c55e; }
+.mode-card.red { --accent: #ef4444; }
+.mode-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  border-color: var(--accent);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.mode-card:active {
+  transform: scale(0.98);
+}
+.mode-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  font-size: 1.9rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 40%, transparent),
+    color-mix(in srgb, var(--accent) 10%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.mode-card:hover .mode-icon {
+  animation: wiggle 0.5s;
+}
+.mode-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.mode-text strong {
+  font-size: 1.15rem;
+}
+.mode-text span {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+.mode-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+.mode-tags i {
+  font-style: normal;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+}
+.mode-tags .tag-new {
+  color: #86efac;
+  border-color: #22c55e;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.mode-tags .tag-done {
+  color: #7dd3fc;
+  border-color: #3b82f6;
+}
+.mode-go {
+  margin-left: auto;
+  font-size: 1.4rem;
+  opacity: 0.4;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.mode-card:hover .mode-go {
+  transform: translateX(6px);
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* ---------- animations ---------- */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-12deg) scale(1.12); }
+  75% { transform: rotate(12deg) scale(1.12); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* people who turn off animations in their system still get the
+   short entrance fade, but not the looping motion */
 @media (prefers-reduced-motion: reduce) {
-  .intro-demo,
-  .intro > * {
+  .bounce,
+  .float,
+  .tag-new,
+  .intro > .intro-demo {
     animation: none;
   }
 }
