@@ -1,6 +1,9 @@
 import { useState } from "react";
-import scenarios from "./data/scenarios.json";
+import base from "./data/scenarios.json";
+import more from "./data/scenarios-more.json";
 import "./App.css";
+
+const scenarios = [...base, ...more];
 
 const MODES = {
   daily: {
@@ -12,8 +15,8 @@ const MODES = {
   classic: {
     label: "Classic",
     emoji: "🎣",
-    desc: "All 10 scenarios in random order.",
-    size: scenarios.length,
+    desc: "10 random scenarios.",
+    size: 10,
   },
   hunt: {
     label: "Red Flag Hunt",
@@ -22,6 +25,8 @@ const MODES = {
     size: 5,
   },
 };
+
+const DAILY_START = "2026-11-01";
 
 function hashString(str) {
   let h = 2166136261;
@@ -72,26 +77,51 @@ function save(key, value) {
   }
 }
 
+// Replays every day since DAILY_START, so each day skips the previous day's 5
+function dailyIds(dateStr) {
+  const last = dateStr < DAILY_START ? DAILY_START : dateStr;
+  const d = new Date(DAILY_START + "T12:00:00");
+  const end = new Date(last + "T12:00:00");
+  let prev = new Set();
+  let ids = [];
+  while (d <= end) {
+    const rand = mulberry32(hashString(d.toLocaleDateString("en-CA")));
+    ids = shuffle(
+      scenarios.filter((s) => !prev.has(s.id)),
+      rand
+    )
+      .slice(0, MODES.daily.size)
+      .map((s) => s.id);
+    prev = new Set(ids);
+    d.setDate(d.getDate() + 1);
+  }
+  return ids;
+}
+
 function buildDeck(mode) {
   if (mode === "daily") {
-    const rand = mulberry32(hashString(todayKey()));
-    return shuffle(scenarios, rand)
-      .slice(0, MODES.daily.size)
-      .map((item) => ({ item }));
+    return dailyIds(todayKey()).map((id) => ({
+      item: scenarios.find((s) => s.id === id),
+    }));
   }
   if (mode === "hunt") {
     const phish = scenarios.filter((s) => s.answer === "phish");
-    const decoyPool = scenarios.flatMap((s) => s.safeSigns || []);
+    const decoyPool = [...new Set(scenarios.flatMap((s) => s.safeSigns || []))];
     return shuffle(phish)
       .slice(0, MODES.hunt.size)
       .map((item) => {
         const correct =
           item.redFlags[Math.floor(Math.random() * item.redFlags.length)];
-        const decoys = shuffle(decoyPool).slice(0, 3);
+        const decoys = shuffle(decoyPool.filter((d) => d !== correct)).slice(
+          0,
+          3
+        );
         return { item, correct, options: shuffle([correct, ...decoys]) };
       });
   }
-  return shuffle(scenarios).map((item) => ({ item }));
+  return shuffle(scenarios)
+    .slice(0, MODES.classic.size)
+    .map((item) => ({ item }));
 }
 
 function parseSender(from) {
@@ -361,7 +391,9 @@ export default function App() {
 
       {mode === "hunt" ? (
         <div className="hunt">
-          <p className="hunt-q">This is a scam. Which one is a real warning sign?</p>
+          <p className="hunt-q">
+            This is a scam. Which one is a real warning sign?
+          </p>
           {entry.options.map((opt) => {
             let cls = "option";
             if (picked) {
