@@ -11,18 +11,24 @@ const MODES = {
     emoji: "📅",
     desc: "5 questions, same for everyone today. One try.",
     size: 5,
+    time: "~1 min",
+    accent: "blue",
   },
   classic: {
     label: "Classic",
     emoji: "🎣",
-    desc: "10 random scenarios.",
+    desc: "10 random scenarios. Play as often as you like.",
     size: 10,
+    time: "~3 min",
+    accent: "green",
   },
   hunt: {
     label: "Red Flag Hunt",
     emoji: "🚩",
     desc: "Spot the real warning sign in 5 scams.",
     size: 5,
+    time: "~1 min",
+    accent: "red",
   },
 };
 
@@ -58,6 +64,13 @@ function shuffle(list, rand = Math.random) {
 
 function todayKey() {
   return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+}
+
+function untilTomorrow() {
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const mins = Math.ceil((next - now) / 60000);
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
 function load(key, fallback) {
@@ -330,29 +343,49 @@ export default function App() {
   // ---------- Menu ----------
   if (!mode) {
     return (
-      <main className="app">
-        <h1 className="title">🎣 Phish or Legit?</h1>
-        <p className="subtitle">Pick a mode</p>
+      <main className="app menu">
+        <div className="glow" />
+        <span className="float f1" aria-hidden="true">🎣</span>
+        <span className="float f2" aria-hidden="true">🛡️</span>
+        <span className="float f3" aria-hidden="true">🚩</span>
+
+        <button className="back" onClick={() => setStarted(false)}>
+          ← Home
+        </button>
+        <h1 className="menu-title">
+          <span className="bounce">🎣</span> Phish <em>or</em> Legit?
+        </h1>
+        <p className="subtitle">Choose your challenge</p>
+
         <div className="modes">
-          {Object.entries(MODES).map(([key, m]) => {
-            const badge =
-              key === "daily"
-                ? playedToday
-                  ? `Today: ${daily.score}/${m.size} ✓`
-                  : "Not played today"
-                : "";
+          {Object.entries(MODES).map(([key, m], i) => {
+            let status = null;
+            if (key === "daily") {
+              status = playedToday
+                ? {
+                    cls: "tag-done",
+                    text: `✓ ${daily.score}/${m.size} · new set in ${untilTomorrow()}`,
+                  }
+                : { cls: "tag-new", text: "● Ready to play" };
+            }
             return (
               <button
                 key={key}
-                className="mode-card"
+                className={`mode-card ${m.accent}`}
+                style={{ animationDelay: `${i * 0.1}s` }}
                 onClick={() => startMode(key)}
               >
-                <span className="mode-emoji">{m.emoji}</span>
+                <span className="mode-icon">{m.emoji}</span>
                 <span className="mode-text">
                   <strong>{m.label}</strong>
                   <span>{m.desc}</span>
-                  {badge && <em>{badge}</em>}
+                  <span className="mode-tags">
+                    <i>{m.size} questions</i>
+                    <i>{m.time}</i>
+                    {status && <i className={status.cls}>{status.text}</i>}
+                  </span>
                 </span>
+                <span className="mode-go">→</span>
               </button>
             );
           })}
