@@ -5,6 +5,9 @@ import "./App.css";
 
 const scenarios = [...base, ...more];
 
+const AUTHOR = "Ralph"; // shown in the About section, change it if you like
+const REPO_URL = "https://github.com/1m33mam31/phish-or-legit";
+
 const TIME_LIMIT = 15;
 
 const MODES = {
@@ -413,7 +416,95 @@ function CountUp({ value }) {
   return <>{n}</>;
 }
 
-function Intro({ onStart }) {
+// "How it works" and About panel
+function InfoPanel({ onClose }) {
+  return (
+    <div className="info-backdrop" onClick={onClose}>
+      <div
+        className="info-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="How it works"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button className="info-close" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+        <h2>How it works</h2>
+
+        <h3>How to play</h3>
+        <ol>
+          <li>Read the message. It could be an email, text, DM or listing.</li>
+          <li>Decide if it's a phish (a scam) or legit.</li>
+          <li>
+            See the red flags, learn what to do next, and build your streak.
+          </li>
+        </ol>
+
+        <h3>Game modes</h3>
+        <ul className="info-modes">
+          {Object.values(MODES).map((m) => (
+            <li key={m.label}>
+              {m.emoji} <strong>{m.label}:</strong> {m.desc}
+            </li>
+          ))}
+        </ul>
+
+        <h3>Privacy</h3>
+        <ul>
+          <li>No account or sign-up.</li>
+          <li>There is no analytics or tracking code in the game.</li>
+          <li>
+            The only thing saved is your Daily Challenge result, in your own
+            browser.
+          </li>
+          <li>
+            Every scam link in the game is fake and can't be clicked.
+          </li>
+        </ul>
+
+        <h3>About</h3>
+        <p>
+          Phish or Legit? is a free project by {AUTHOR}, a cyber security
+          student, to make scam awareness more fun. The messages are fictional,
+          written from common scam types seen in Australia. It's for learning
+          and isn't professional advice.
+        </p>
+
+        <h3>Real help if you've been scammed</h3>
+        <p>Contact your bank first, then report it:</p>
+        <div className="info-links">
+          <a
+            href="https://www.scamwatch.gov.au/report-a-scam"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Scamwatch
+          </a>
+          <a
+            href="https://www.cyber.gov.au"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ReportCyber
+          </a>
+          <a
+            href="https://www.idcare.org"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            IDCARE
+          </a>
+          <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+            Source code
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Intro({ onStart, onInfo }) {
   return (
     <main className="app intro">
       <div className="glow" />
@@ -446,6 +537,11 @@ function Intro({ onStart }) {
       <button className="cta" onClick={onStart}>
         Start playing →
       </button>
+      <div>
+        <button className="linkbtn" onClick={onInfo}>
+          ℹ️ How it works
+        </button>
+      </div>
 
       <div className="steps">
         <div className="step">
@@ -471,6 +567,7 @@ function Intro({ onStart }) {
 
 export default function App() {
   const [started, setStarted] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [mode, setMode] = useState(null);
   const [deck, setDeck] = useState([]);
   const [index, setIndex] = useState(0);
@@ -485,6 +582,16 @@ export default function App() {
   const [daily, setDaily] = useState(() => load("pol-daily", null));
 
   const playedToday = daily && daily.date === todayKey();
+
+  // Escape key closes the How it works panel
+  useEffect(() => {
+    if (!showInfo) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setShowInfo(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showInfo]);
 
   // Timed mode countdown: one tick per second, running out counts as wrong
   useEffect(() => {
@@ -562,7 +669,15 @@ export default function App() {
 
   // ---------- Intro ----------
   if (!started) {
-    return <Intro onStart={() => setStarted(true)} />;
+    return (
+      <>
+        <Intro
+          onStart={() => setStarted(true)}
+          onInfo={() => setShowInfo(true)}
+        />
+        {showInfo && <InfoPanel onClose={() => setShowInfo(false)} />}
+      </>
+    );
   }
 
   // ---------- Menu ----------
@@ -576,9 +691,14 @@ export default function App() {
         <span className="float f4" aria-hidden="true">📧</span>
         <span className="float f5" aria-hidden="true">🔒</span>
 
-        <button className="back" onClick={() => setStarted(false)}>
-          ← Home
-        </button>
+        <div className="menu-top">
+          <button className="back" onClick={() => setStarted(false)}>
+            ← Home
+          </button>
+          <button className="linkbtn" onClick={() => setShowInfo(true)}>
+            ℹ️ How it works
+          </button>
+        </div>
         <h1 className="menu-title">
           <span className="bounce">🎣</span> Phish <em>or</em> Legit?
         </h1>
@@ -619,6 +739,8 @@ export default function App() {
             );
           })}
         </div>
+
+        {showInfo && <InfoPanel onClose={() => setShowInfo(false)} />}
       </main>
     );
   }

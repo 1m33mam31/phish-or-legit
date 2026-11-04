@@ -917,3 +917,112 @@ body::before {
 .help-links a:hover {
   background: rgba(59, 130, 246, 0.2);
 }
+/* ---------- how it works panel ---------- */
+.linkbtn {
+  background: none;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  transition: color 0.2s, border-color 0.2s;
+}
+.linkbtn:hover {
+  color: #e2e8f0;
+  border-color: #3b82f6;
+}
+.intro .linkbtn {
+  margin-top: 1rem;
+}
+.menu-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.info-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(2, 6, 23, 0.75);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.25s both;
+}
+.info-panel {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  text-align: left;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  padding: 1.5rem 1.4rem 1.6rem;
+  box-shadow: 0 30px 80px #000a;
+  animation: popIn 0.35s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+.info-panel h2 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+}
+.info-panel h3 {
+  margin: 1.4rem 0 0.5rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+.info-panel p,
+.info-panel li {
+  line-height: 1.55;
+  color: #cbd5e1;
+}
+.info-panel ul,
+.info-panel ol {
+  margin: 0.3rem 0;
+  padding-left: 1.2rem;
+}
+.info-modes {
+  list-style: none;
+  padding-left: 0 !important;
+}
+.info-modes li {
+  padding: 0.25rem 0;
+}
+.info-close {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #cbd5e1;
+}
+.info-close:hover {
+  background: #334155;
+}
+.info-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+.info-links a {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #3b82f6;
+  color: #93c5fd;
+  text-decoration: none;
+}
+.info-links a:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
