@@ -1026,3 +1026,151 @@ body::before {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+/* ---------- phish / legit answer buttons ---------- */
+.answer {
+  --a: #ef4444;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font: inherit;
+  color: #f8fafc;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--a) 26%, #0f172a) 0%,
+    color-mix(in srgb, var(--a) 8%, #0b1220) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--a) 55%, transparent);
+  border-radius: 16px;
+  box-shadow:
+    0 4px 0 color-mix(in srgb, var(--a) 40%, #020617),
+    0 10px 24px color-mix(in srgb, var(--a) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.answer.legit {
+  --a: #22c55e;
+}
+.answer-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  color: var(--a);
+  background: color-mix(in srgb, var(--a) 18%, #0b1220);
+  border: 1px solid color-mix(in srgb, var(--a) 45%, transparent);
+}
+.answer-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.answer-text strong {
+  font-size: 1.2rem;
+  letter-spacing: -0.01em;
+}
+.answer-text span {
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+.answer-key {
+  margin-left: auto;
+  font: 700 0.75rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 0.3rem 0.45rem;
+}
+
+/* real buttons: lift on hover, press down on click */
+.buttons .answer {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #f8fafc;
+  transition: transform 0.12s ease, box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+.buttons .answer:hover {
+  transform: translateY(-3px);
+  border-color: var(--a);
+  box-shadow:
+    0 7px 0 color-mix(in srgb, var(--a) 40%, #020617),
+    0 16px 32px color-mix(in srgb, var(--a) 32%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.buttons .answer:active {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--a) 40%, #020617),
+    0 4px 10px color-mix(in srgb, var(--a) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.answer:focus-visible {
+  outline: 2px solid #e2e8f0;
+  outline-offset: 3px;
+}
+
+/* intro demo buttons (not clickable) */
+.demo-pills .answer {
+  flex: 1;
+}
+.answer.demo {
+  pointer-events: none;
+}
+
+/* keyboard tip, hidden on touch screens */
+.key-hint {
+  margin: 0.9rem 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+.key-hint kbd {
+  font: 700 0.72rem ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 0.1rem 0.35rem;
+}
+@media (hover: none), (pointer: coarse) {
+  .key-hint {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .buttons {
+    gap: 0.6rem;
+  }
+  .answer-key {
+    display: none;
+  }
+  .answer-icon {
+    width: 38px;
+    height: 38px;
+  }
+  .answer-text strong {
+    font-size: 1.05rem;
+  }
+}
+/* ---------- small fixes ---------- */
+/* let hover movement work after the entrance animation finishes */
+.mode-card,
+.results .share,
+.results button,
+.intro > .cta {
+  animation-fill-mode: backwards;
+}
+/* stop the old top rule clashing with the new bottom rule */
+.f3 {
+  top: auto;
+}

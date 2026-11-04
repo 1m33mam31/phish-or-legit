@@ -416,6 +416,54 @@ function CountUp({ value }) {
   return <>{n}</>;
 }
 
+// Shield icons for the Phish / Legit buttons
+function ShieldIcon({ kind }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="26"
+      height="26"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" />
+      {kind === "phish" ? (
+        <>
+          <path d="M12 8v4" />
+          <path d="M12 15.5h.01" />
+        </>
+      ) : (
+        <path d="M9 12l2 2 4-4" />
+      )}
+    </svg>
+  );
+}
+
+// The inside of a Phish / Legit button (used by the real buttons and the intro demo)
+function AnswerFace({ kind, showKey }) {
+  const isPhish = kind === "phish";
+  return (
+    <>
+      <span className="answer-icon">
+        <ShieldIcon kind={kind} />
+      </span>
+      <span className="answer-text">
+        <strong>{isPhish ? "Phish" : "Legit"}</strong>
+        <span>{isPhish ? "It's a scam" : "It's safe"}</span>
+      </span>
+      {showKey && (
+        <kbd className="answer-key" aria-hidden="true">
+          {isPhish ? "P" : "L"}
+        </kbd>
+      )}
+    </>
+  );
+}
+
 // "How it works" and About panel
 function InfoPanel({ onClose }) {
   return (
@@ -529,8 +577,12 @@ function Intro({ onStart, onInfo }) {
           </div>
         </div>
         <div className="demo-pills">
-          <span className="pill pill-phish">🎣 Phish</span>
-          <span className="pill pill-legit">✅ Legit</span>
+          <span className="answer phish demo">
+            <AnswerFace kind="phish" />
+          </span>
+          <span className="answer legit demo">
+            <AnswerFace kind="legit" />
+          </span>
         </div>
       </div>
 
@@ -592,6 +644,21 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [showInfo]);
+
+  // Keyboard shortcuts: P = Phish, L = Legit (not in Red Flag Hunt)
+  useEffect(() => {
+    if (!started || !mode || mode === "hunt" || finished || picked || showInfo) {
+      return;
+    }
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === "p") choose("phish");
+      else if (k === "l") choose("legit");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   // Timed mode countdown: one tick per second, running out counts as wrong
   useEffect(() => {
@@ -872,14 +939,25 @@ export default function App() {
         </div>
       ) : (
         !picked && (
-          <div className="buttons">
-            <button className="btn-phish" onClick={() => choose("phish")}>
-              🎣 Phish
-            </button>
-            <button className="btn-legit" onClick={() => choose("legit")}>
-              ✅ Legit
-            </button>
-          </div>
+          <>
+            <div className="buttons">
+              <button
+                className="answer phish"
+                onClick={() => choose("phish")}
+              >
+                <AnswerFace kind="phish" showKey />
+              </button>
+              <button
+                className="answer legit"
+                onClick={() => choose("legit")}
+              >
+                <AnswerFace kind="legit" showKey />
+              </button>
+            </div>
+            <p className="key-hint">
+              Tip: press <kbd>P</kbd> for Phish or <kbd>L</kbd> for Legit
+            </p>
+          </>
         )
       )}
 
