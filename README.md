@@ -4,15 +4,10 @@ A free browser game that teaches people to spot scams. Read a realistic email, t
 
 **[▶ Play it live](LIVE_LINK_HERE)** · Built with React and Vite
 
-## Screenshots
-
-| Menu | Question | Results |
-| --- | --- | --- |
-| ![Menu](screenshots/menu.png) | ![Question](screenshots/question.png) | ![Results](screenshots/results.png) |
 
 ## Why I built it
 
-I'm a cyber security student, and most scam awareness material is a wall of text. I wanted something people would actually finish, and I wanted to practise shipping a real project end to end: design, code, deployment and a security review.
+I'm a cyber security student, and most scam awareness material is a wall of text. I wanted something people would actually finish, and I wanted to practice shipping a real project end to end: design, code, deployment and a security review. I want to make it fun, learn and users stay aware on the ongoing phishes.
 
 ## Features
 
@@ -105,4 +100,4 @@ This is an educational project and not professional advice. If you think you've 
 
 ## Author
 
-**YOUR_NAME**, cyber security student · [LinkedIn](LINKEDIN_LINK_HERE)
+Ralph, cyber security student · [LinkedIn](https://www.linkedin.com/in/ralph-thang-b0732b3a3/)
