@@ -2,7 +2,7 @@
 
 A free browser game that teaches people to spot scams. Read a realistic email, text, DM or marketplace message, decide if it's a phish or legit, then learn the red flags and what to do next. No account, no sign-up, about 2 minutes to play.
 
-**[▶ Play it live](LIVE_LINK_HERE)** · Built with React and Vite
+**[▶ Play it live](https://phish-or-legit-tau.vercel.app/)** · Built with React and Vite
 
 
 ## Why I built it
