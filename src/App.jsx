@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import "@fontsource-variable/bricolage-grotesque";
 import base from "./data/scenarios.json";
 import more from "./data/scenarios-more.json";
 import "./App.css";
@@ -13,46 +14,38 @@ const TIME_LIMIT = 15;
 const MODES = {
   daily: {
     label: "Daily Challenge",
-    emoji: "📅",
     desc: "5 questions, same for everyone today. One try.",
     size: 5,
     time: "~1 min",
-    accent: "blue",
   },
   classic: {
     label: "Classic",
-    emoji: "🎣",
     desc: "10 random scenarios. Play as often as you like.",
     size: 10,
     time: "~3 min",
-    accent: "green",
   },
   timed: {
     label: "Timed Mode",
-    emoji: "⏱️",
     desc: `${TIME_LIMIT} seconds per question. Run out of time and it counts as wrong.`,
     size: 10,
     time: "~2 min",
-    accent: "orange",
   },
   hunt: {
     label: "Red Flag Hunt",
-    emoji: "🚩",
     desc: "Spot the real warning sign in 5 scams.",
     size: 5,
     time: "~1 min",
-    accent: "red",
   },
 };
 
 const DAILY_START = "2026-11-01";
 
 const CONFETTI_COLORS = [
-  "#3b82f6",
-  "#22c55e",
-  "#ef4444",
-  "#f59e0b",
-  "#ec4899",
+  "#7aa2ff",
+  "#3ddc97",
+  "#ff5d4f",
+  "#ffb84d",
+  "#f472b6",
   "#a78bfa",
 ];
 
@@ -151,6 +144,7 @@ function getTips(item) {
   return steps;
 }
 
+// ---------- helpers ----------
 function hashString(str) {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) {
@@ -276,6 +270,130 @@ const TYPE_LABELS = {
   message: "Marketplace message",
 };
 
+// ---------- icons and logo ----------
+const LINE = {
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": true,
+};
+
+const ICONS = {
+  daily: () => (
+    <svg viewBox="0 0 24 24" width="22" height="22" {...LINE}>
+      <rect x="3.5" y="5" width="17" height="15" rx="3" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+    </svg>
+  ),
+  classic: () => (
+    <svg viewBox="0 0 24 24" width="22" height="22" {...LINE}>
+      <rect x="3" y="5.5" width="18" height="13" rx="3" />
+      <path d="M4 8.5l8 5.5 8-5.5" />
+    </svg>
+  ),
+  timed: () => (
+    <svg viewBox="0 0 24 24" width="22" height="22" {...LINE}>
+      <circle cx="12" cy="13.5" r="7" />
+      <path d="M12 13.5V9.8M9.5 3h5M12 3v3" />
+    </svg>
+  ),
+  hunt: () => (
+    <svg viewBox="0 0 24 24" width="22" height="22" {...LINE}>
+      <path d="M6 21V4M6 5h11l-2.5 4L17 13H6" />
+    </svg>
+  ),
+};
+
+function Chevron() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...LINE}>
+      <path d="M14 6l-6 6 6 6" />
+    </svg>
+  );
+}
+
+// Half red, half green shield: phish on one side, legit on the other.
+function Mark({ size = 40 }) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+      <defs>
+        <clipPath id="shield-clip">
+          <path d="M16 2.5l11 4.2v8.3c0 7-4.6 11.7-11 14-6.4-2.3-11-7-11-14V6.7L16 2.5z" />
+        </clipPath>
+      </defs>
+      <g clipPath="url(#shield-clip)">
+        <rect width="16" height="32" fill="#ff5d4f" />
+        <rect x="16" width="16" height="32" fill="#3ddc97" />
+      </g>
+      <path
+        d="M10.8 10.5v6"
+        stroke="#fff"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      <circle cx="10.8" cy="20.8" r="1.4" fill="#fff" />
+      <path
+        d="M18.6 15.8l2.7 2.7 4.5-5.2"
+        fill="none"
+        stroke="#05261b"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ShieldIcon({ kind }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="26"
+      height="26"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" />
+      {kind === "phish" ? (
+        <>
+          <path d="M12 8v4" />
+          <path d="M12 15.5h.01" />
+        </>
+      ) : (
+        <path d="M9 12l2 2 4-4" />
+      )}
+    </svg>
+  );
+}
+
+// The inside of a Phish / Legit button (used by the real buttons and the intro demo)
+function AnswerFace({ kind, showKey }) {
+  const isPhish = kind === "phish";
+  return (
+    <>
+      <span className="answer-icon">
+        <ShieldIcon kind={kind} />
+      </span>
+      <span className="answer-text">
+        <strong>{isPhish ? "Phish" : "Legit"}</strong>
+        <span>{isPhish ? "It's a scam" : "It's safe"}</span>
+      </span>
+      {showKey && (
+        <kbd className="answer-key" aria-hidden="true">
+          {isPhish ? "P" : "L"}
+        </kbd>
+      )}
+    </>
+  );
+}
+
+// ---------- scenario cards ----------
 function Scenario({ item, revealed }) {
   const { name, address } = parseSender(item.from);
   const state = revealed ? (item.answer === "phish" ? "bad" : "ok") : "";
@@ -286,8 +404,8 @@ function Scenario({ item, revealed }) {
 
   if (item.type === "email") {
     return (
-      <div className="window">
-        <div className="window-bar">
+      <div className="mail">
+        <div className="mail-bar">
           <span />
           <span />
           <span />
@@ -327,43 +445,68 @@ function Scenario({ item, revealed }) {
   );
 }
 
-// Rotating "Real or fake?" teaser. The set changes daily and never shows answers.
-function Teaser() {
-  const [items] = useState(() =>
-    shuffle(
-      scenarios.filter((s) => s.type !== "email" && s.body.length <= 95),
-      mulberry32(hashString(todayKey()))
-    ).slice(0, 6)
-  );
+// ---------- rotating example messages (menu hero) ----------
+function InboxStack({ items }) {
   const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [reduceMotion] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      Boolean(window.matchMedia) &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 
   useEffect(() => {
-    const t = setInterval(() => setI((n) => (n + 1) % items.length), 4500);
+    if (paused || reduceMotion || items.length < 2) return;
+    const t = setInterval(() => setI((n) => (n + 1) % items.length), 5000);
     return () => clearInterval(t);
-  }, [items.length]);
+  }, [paused, reduceMotion, items.length, i]);
 
   const item = items[i];
 
   return (
-    <div className="teaser">
-      <div className="teaser-label">
-        <span>🤔 Would you fall for this?</span>
-        <span className="teaser-live">● Live</span>
+    <div
+      className="stack"
+      role="group"
+      aria-label="Example messages"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
+      <div className="deck">
+        <div className="layer layer-3" aria-hidden="true" />
+        <div className="layer layer-2" aria-hidden="true" />
+        <article className="front note" key={item.id}>
+          <header className="note-head">
+            <span className="note-app" aria-hidden="true" />
+            <span>Inbox</span>
+            <span className="note-time">now</span>
+          </header>
+          <p className="note-from">{item.from}</p>
+          <p className="note-body">{item.body}</p>
+        </article>
       </div>
-      <div className="teaser-inner" key={item.id}>
-        <div className="teaser-from">{item.from}</div>
-        <p className="teaser-body">“{item.body}”</p>
-        <div className="teaser-q">Real or fake? Pick a mode to find out 👇</div>
-      </div>
-      <div className="teaser-dots">
-        {items.map((s, n) => (
-          <i key={s.id} className={n === i ? "on" : ""} />
-        ))}
+
+      <div className="stack-foot">
+        <p className="ask">Real or fake? You decide.</p>
+        <div className="dots">
+          {items.map((s, n) => (
+            <button
+              key={s.id}
+              className="dot"
+              aria-label={`Show example ${n + 1} of ${items.length}`}
+              aria-current={n === i}
+              onClick={() => setI(n)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
+// ---------- results extras ----------
 // Confetti pieces use fixed values (no randomness), so every burst looks lively
 function Confetti() {
   const pieces = Array.from({ length: 60 }, (_, i) => ({
@@ -416,55 +559,7 @@ function CountUp({ value }) {
   return <>{n}</>;
 }
 
-// Shield icons for the Phish / Legit buttons
-function ShieldIcon({ kind }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="26"
-      height="26"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" />
-      {kind === "phish" ? (
-        <>
-          <path d="M12 8v4" />
-          <path d="M12 15.5h.01" />
-        </>
-      ) : (
-        <path d="M9 12l2 2 4-4" />
-      )}
-    </svg>
-  );
-}
-
-// The inside of a Phish / Legit button (used by the real buttons and the intro demo)
-function AnswerFace({ kind, showKey }) {
-  const isPhish = kind === "phish";
-  return (
-    <>
-      <span className="answer-icon">
-        <ShieldIcon kind={kind} />
-      </span>
-      <span className="answer-text">
-        <strong>{isPhish ? "Phish" : "Legit"}</strong>
-        <span>{isPhish ? "It's a scam" : "It's safe"}</span>
-      </span>
-      {showKey && (
-        <kbd className="answer-key" aria-hidden="true">
-          {isPhish ? "P" : "L"}
-        </kbd>
-      )}
-    </>
-  );
-}
-
-// "How it works" and About panel
+// ---------- "How it works" and About panel ----------
 function InfoPanel({ onClose }) {
   return (
     <div className="info-backdrop" onClick={onClose}>
@@ -491,11 +586,17 @@ function InfoPanel({ onClose }) {
 
         <h3>Game modes</h3>
         <ul className="info-modes">
-          {Object.values(MODES).map((m) => (
-            <li key={m.label}>
-              {m.emoji} <strong>{m.label}:</strong> {m.desc}
-            </li>
-          ))}
+          {Object.entries(MODES).map(([key, m]) => {
+            const Icon = ICONS[key];
+            return (
+              <li key={key}>
+                <Icon />
+                <span>
+                  <strong>{m.label}.</strong> {m.desc}
+                </span>
+              </li>
+            );
+          })}
         </ul>
 
         <h3>Privacy</h3>
@@ -506,9 +607,7 @@ function InfoPanel({ onClose }) {
             The only thing saved is your Daily Challenge result, in your own
             browser.
           </li>
-          <li>
-            Every scam link in the game is fake and can't be clicked.
-          </li>
+          <li>Every scam link in the game is fake and can't be clicked.</li>
         </ul>
 
         <h3>About</h3>
@@ -552,71 +651,185 @@ function InfoPanel({ onClose }) {
   );
 }
 
+// ---------- intro screen ----------
+const DEMO_ITEM = {
+  id: 0,
+  type: "sms",
+  from: "AusPost",
+  subject: null,
+  body: "Your parcel is on hold. Pay a $2.95 fee within 24 hours.",
+  link: null,
+  answer: "phish",
+};
+
 function Intro({ onStart, onInfo }) {
   return (
-    <main className="app intro">
-      <div className="glow" />
-      <div className="intro-badge">🛡️ Free · No sign-up · Takes 2 minutes</div>
-      <h1 className="intro-title">
-        Phish <span>or</span> Legit?
-      </h1>
-      <p className="intro-sub">
-        Can you spot a scam before it spots you? Read realistic emails, texts
-        and DMs, then decide if they're safe.
-      </p>
-
-      <div className="intro-demo" aria-hidden="true">
-        <div className="chat sms">
-          <div className="chat-head">
-            <div className="avatar small">A</div>
-            <div className="sender-name">AusPost</div>
-            <div className="chat-type">Text message</div>
-          </div>
-          <div className="bubble">
-            Your parcel is on hold. Pay a $2.95 fee within 24 hours.
-          </div>
-        </div>
-        <div className="demo-pills">
-          <span className="answer phish demo">
-            <AnswerFace kind="phish" />
-          </span>
-          <span className="answer legit demo">
-            <AnswerFace kind="legit" />
-          </span>
-        </div>
-      </div>
-
-      <button className="cta" onClick={onStart}>
-        Start playing →
-      </button>
-      <div>
-        <button className="linkbtn" onClick={onInfo}>
-          ℹ️ How it works
+    <main className="screen intro">
+      <header className="topbar">
+        <Mark size={32} />
+        <button className="pill" onClick={onInfo}>
+          How it works
         </button>
+      </header>
+
+      <div className="intro-grid">
+        <div className="intro-copy">
+          <p className="intro-note">Free. No sign-up. About two minutes.</p>
+          <h1 className="intro-title">Phish or Legit?</h1>
+          <p className="intro-sub">
+            Can you spot a scam before it spots you? Read realistic emails,
+            texts and DMs, then decide if they're safe.
+          </p>
+
+          <div className="intro-actions">
+            <button className="cta" onClick={onStart}>
+              Start playing
+            </button>
+            <span className="cta-note">
+              Your scores stay in your browser.
+            </span>
+          </div>
+
+          <ol className="how">
+            <li>Read the message</li>
+            <li>Decide: phish or legit</li>
+            <li>See the red flags and what to do next</li>
+          </ol>
+        </div>
+
+        <div className="intro-demo" aria-hidden="true">
+          <div className="deck">
+            <div className="layer layer-3" />
+            <div className="layer layer-2" />
+            <div className="front">
+              <Scenario item={DEMO_ITEM} revealed={false} />
+            </div>
+          </div>
+          <div className="answers demo-answers">
+            <span className="answer phish demo">
+              <AnswerFace kind="phish" />
+            </span>
+            <span className="answer legit demo">
+              <AnswerFace kind="legit" />
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="steps">
-        <div className="step">
-          <strong>1</strong>
-          <span>Read the message</span>
-        </div>
-        <div className="step">
-          <strong>2</strong>
-          <span>Decide: Phish or Legit</span>
-        </div>
-        <div className="step">
-          <strong>3</strong>
-          <span>Learn the red flags</span>
-        </div>
-      </div>
-
-      <p className="intro-foot">
-        Your scores stay in your browser. Every scam link in the game is fake.
-      </p>
+      <p className="intro-foot">Every scam link in the game is fake.</p>
     </main>
   );
 }
 
+// ---------- menu screen ----------
+function Menu({ daily, playedToday, onSelect, onHome, onInfo }) {
+  const items = useMemo(
+    () =>
+      shuffle(
+        scenarios.filter((s) => s.type !== "email" && s.body.length <= 95),
+        mulberry32(hashString(todayKey()))
+      ).slice(0, 5),
+    []
+  );
+  const dailySize = MODES.daily.size;
+  const practice = [
+    { key: "classic", blurb: "Ten random messages. Play as often as you like." },
+    {
+      key: "timed",
+      blurb: "Beat the clock. Running out of time counts as wrong.",
+    },
+    { key: "hunt", blurb: "It's a scam. Pick the real warning sign." },
+  ];
+
+  return (
+    <main className="screen menu">
+      <header className="topbar">
+        <button className="link" onClick={onHome}>
+          <Chevron />
+          Home
+        </button>
+        <button className="pill" onClick={onInfo}>
+          How it works
+        </button>
+      </header>
+
+      <div className="brand">
+        <Mark />
+        <div>
+          <h1 className="title">Phish or Legit?</h1>
+          <p className="brand-sub">Read the message. Decide if it's a scam.</p>
+        </div>
+      </div>
+
+      <section className="hero" aria-labelledby="daily-title">
+        <div className="hero-copy">
+          <h2 id="daily-title" className="hero-title">
+            {MODES.daily.label}
+          </h2>
+          <p className="hero-text">
+            Five messages, the same for everyone today. You get one try.
+          </p>
+
+          <div className="actions">
+            <button className="cta" onClick={() => onSelect("daily")}>
+              {playedToday ? "See today's result" : "Play today's set"}
+            </button>
+
+            {playedToday ? (
+              <div className="status">
+                <div
+                  className="score-bar"
+                  role="img"
+                  aria-label={`You scored ${daily.score} out of ${dailySize} today`}
+                >
+                  {Array.from({ length: dailySize }, (_, n) => (
+                    <span key={n} className={n < daily.score ? "on" : ""} />
+                  ))}
+                </div>
+                <span>
+                  {daily.score} of {dailySize}. New set in {untilTomorrow()}
+                </span>
+              </div>
+            ) : (
+              <span className="status">New set every midnight</span>
+            )}
+          </div>
+        </div>
+
+        <InboxStack items={items} />
+      </section>
+
+      <h2 className="section-label">Practice</h2>
+      <div className="tiles">
+        {practice.map(({ key, blurb }) => {
+          const m = MODES[key];
+          const Icon = ICONS[key];
+          return (
+            <button
+              key={key}
+              className={`tile tile-${key}`}
+              onClick={() => onSelect(key)}
+            >
+              <span className="tile-icon">
+                <Icon />
+              </span>
+              <span className="tile-name">{m.label}</span>
+              <span className="tile-blurb">{blurb}</span>
+              <span className="tile-meta">
+                <span>{m.size} questions</span>
+                <span>{m.time}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="foot">No account needed. Every link in the game is fake.</p>
+    </main>
+  );
+}
+
+// ---------- the app ----------
 export default function App() {
   const [started, setStarted] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -734,6 +947,8 @@ export default function App() {
     }
   }
 
+  const info = showInfo && <InfoPanel onClose={() => setShowInfo(false)} />;
+
   // ---------- Intro ----------
   if (!started) {
     return (
@@ -742,7 +957,7 @@ export default function App() {
           onStart={() => setStarted(true)}
           onInfo={() => setShowInfo(true)}
         />
-        {showInfo && <InfoPanel onClose={() => setShowInfo(false)} />}
+        {info}
       </>
     );
   }
@@ -750,67 +965,20 @@ export default function App() {
   // ---------- Menu ----------
   if (!mode) {
     return (
-      <main className="app menu">
-        <div className="glow" />
-        <span className="float f1" aria-hidden="true">🎣</span>
-        <span className="float f2" aria-hidden="true">🛡️</span>
-        <span className="float f3" aria-hidden="true">🚩</span>
-        <span className="float f4" aria-hidden="true">📧</span>
-        <span className="float f5" aria-hidden="true">🔒</span>
-
-        <div className="menu-top">
-          <button className="back" onClick={() => setStarted(false)}>
-            ← Home
-          </button>
-          <button className="linkbtn" onClick={() => setShowInfo(true)}>
-            ℹ️ How it works
-          </button>
-        </div>
-        <h1 className="menu-title">
-          <span className="bounce">🎣</span> Phish <em>or</em> Legit?
-        </h1>
-        <p className="subtitle">Choose your challenge</p>
-
-        <Teaser />
-
-        <div className="modes">
-          {Object.entries(MODES).map(([key, m], i) => {
-            let status = null;
-            if (key === "daily") {
-              status = playedToday
-                ? {
-                    cls: "tag-done",
-                    text: `✓ ${daily.score}/${m.size} · new set in ${untilTomorrow()}`,
-                  }
-                : { cls: "tag-new", text: "● Ready to play" };
-            }
-            return (
-              <button
-                key={key}
-                className={`mode-card ${m.accent}`}
-                style={{ animationDelay: `${i * 0.1 + 0.1}s` }}
-                onClick={() => startMode(key)}
-              >
-                <span className="mode-icon">{m.emoji}</span>
-                <span className="mode-text">
-                  <strong>{m.label}</strong>
-                  <span>{m.desc}</span>
-                  <span className="mode-tags">
-                    <i>{m.size} questions</i>
-                    <i>{m.time}</i>
-                    {status && <i className={status.cls}>{status.text}</i>}
-                  </span>
-                </span>
-                <span className="mode-go">→</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {showInfo && <InfoPanel onClose={() => setShowInfo(false)} />}
-      </main>
+      <>
+        <Menu
+          daily={daily}
+          playedToday={playedToday}
+          onSelect={startMode}
+          onHome={() => setStarted(false)}
+          onInfo={() => setShowInfo(true)}
+        />
+        {info}
+      </>
     );
   }
+
+  const ModeIcon = ICONS[mode];
 
   // ---------- Results ----------
   if (finished) {
@@ -832,36 +1000,44 @@ export default function App() {
     }
 
     return (
-      <main className="app">
-        <h1 className="title">🎣 Phish or Legit?</h1>
+      <main className="screen narrow">
+        <header className="topbar">
+          <button className="link" onClick={backToMenu}>
+            <Chevron />
+            Menu
+          </button>
+          <span className="modechip">
+            <ModeIcon />
+            {label}
+          </span>
+        </header>
         {celebrate && <Confetti />}
         <div className={`results pop ${celebrate ? "perfect" : ""}`}>
-          <p className="tag">
-            {celebrate ? "🎉 Perfect score! · " : ""}
-            {label}
-          </p>
+          {celebrate && <p className="tag">Perfect score</p>}
           <div className="rank-emoji">{rank.emoji}</div>
           <h2 className="rank-title">{rank.title}</h2>
           <div className="big-score">
             <CountUp value={score} />
             <span>/ {total}</span>
           </div>
-          {mode !== "hunt" && <p>Best streak: {bestStreak}</p>}
+          {mode !== "hunt" && <p className="results-sub">Best streak: {bestStreak}</p>}
           {mode === "daily" && (
-            <p className="tag">Come back tomorrow for a new set.</p>
+            <p className="results-sub">Come back tomorrow for a new set.</p>
           )}
           <div className="share">{shareText}</div>
-          {mode !== "daily" && (
-            <button className="primary" onClick={() => startMode(mode)}>
-              Play again
+          <div className="results-actions">
+            {mode !== "daily" && (
+              <button className="cta" onClick={() => startMode(mode)}>
+                Play again
+              </button>
+            )}
+            <button className="ghost" onClick={copyShare}>
+              {copied ? "Copied" : "Copy score"}
             </button>
-          )}
-          <button className="secondary" onClick={copyShare}>
-            {copied ? "Copied!" : "Copy score"}
-          </button>
-          <button className="secondary" onClick={backToMenu}>
-            Menu
-          </button>
+            <button className="ghost" onClick={backToMenu}>
+              Menu
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -877,23 +1053,29 @@ export default function App() {
   const progress = ((index + (picked ? 1 : 0)) / deck.length) * 100;
 
   return (
-    <main className="app">
-      <button className="back" onClick={backToMenu}>
-        ← Menu
-      </button>
-      <h1 className="title">
-        {MODES[mode].emoji} {MODES[mode].label}
-      </h1>
+    <main className="screen narrow">
+      <header className="topbar">
+        <button className="link" onClick={backToMenu}>
+          <Chevron />
+          Menu
+        </button>
+        <span className="modechip">
+          <ModeIcon />
+          {MODES[mode].label}
+        </span>
+      </header>
 
       <div className="progress">
         <div className="progress-fill" style={{ width: `${progress}%` }} />
       </div>
-      <div className="chips">
+      <div className="meta">
         <span>
-          Question {index + 1} / {deck.length}
+          Question {index + 1} of {deck.length}
         </span>
-        <span className="chip">Score {score}</span>
-        {mode !== "hunt" && <span className="chip">🔥 Streak {streak}</span>}
+        <span className="meta-stats">
+          <span>Score {score}</span>
+          {mode !== "hunt" && <span>Streak {streak}</span>}
+        </span>
       </div>
 
       {mode === "timed" && (
@@ -902,11 +1084,13 @@ export default function App() {
             picked ? "frozen" : ""
           }`}
         >
-          <div
-            className="timer-fill"
-            style={{ width: `${(timeLeft / TIME_LIMIT) * 100}%` }}
-          />
-          <span>⏱ {timeLeft}s</span>
+          <div className="timer-track">
+            <div
+              className="timer-fill"
+              style={{ width: `${(timeLeft / TIME_LIMIT) * 100}%` }}
+            />
+          </div>
+          <span className="timer-num">{timeLeft}s</span>
         </div>
       )}
 
@@ -940,7 +1124,7 @@ export default function App() {
       ) : (
         !picked && (
           <>
-            <div className="buttons">
+            <div className="answers">
               <button
                 className="answer phish"
                 onClick={() => choose("phish")}
@@ -965,19 +1149,19 @@ export default function App() {
         <div className={`feedback ${correct ? "good" : "wrong"}`}>
           <h3>
             {picked === "timeout"
-              ? "⏰ Time's up!"
+              ? "Time's up."
               : correct
-                ? "Correct!"
+                ? "Correct."
                 : "Not quite."}{" "}
             {mode === "hunt"
               ? "Here is the full picture."
               : `This was ${current.answer === "phish" ? "a phish." : "legit."}`}
           </h3>
           <p>{current.explanation}</p>
-          <strong>
-            {current.answer === "phish" ? "Red flags:" : "Safe signs:"}
-          </strong>
-          <ul>
+          <p className="label">
+            {current.answer === "phish" ? "Red flags" : "Safe signs"}
+          </p>
+          <ul className="flags">
             {hints.map((item) => (
               <li key={item}>{item}</li>
             ))}
@@ -985,7 +1169,7 @@ export default function App() {
 
           {current.answer === "phish" && (
             <div className="next-steps">
-              <strong>🛟 What to do next</strong>
+              <p className="label">What to do next</p>
               <ol>
                 {getTips(current).map((tip) => (
                   <li key={tip}>{tip}</li>
@@ -1021,7 +1205,7 @@ export default function App() {
             </div>
           )}
 
-          <button className="primary" onClick={next}>
+          <button className="cta" onClick={next}>
             {index + 1 >= deck.length ? "See results" : "Next"}
           </button>
         </div>
