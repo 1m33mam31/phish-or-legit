@@ -314,34 +314,40 @@ function Chevron() {
   );
 }
 
-// Half red, half green shield: phish on one side, legit on the other.
+// The logo: a simple shield with a tick on a rounded badge.
 function Mark({ size = 40 }) {
   return (
-    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+    <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
       <defs>
-        <clipPath id="shield-clip">
-          <path d="M16 2.5l11 4.2v8.3c0 7-4.6 11.7-11 14-6.4-2.3-11-7-11-14V6.7L16 2.5z" />
-        </clipPath>
+        <linearGradient id="mark-grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#5b7cff" />
+          <stop offset="1" stopColor="#8b5cf6" />
+        </linearGradient>
       </defs>
-      <g clipPath="url(#shield-clip)">
-        <rect width="16" height="32" fill="#ff5d4f" />
-        <rect x="16" width="16" height="32" fill="#3ddc97" />
-      </g>
+      <rect width="40" height="40" rx="11" fill="url(#mark-grad)" />
       <path
-        d="M10.8 10.5v6"
+        d="M20 9l9 3.4v6.4c0 5.8-3.8 9.8-9 11.8-5.2-2-9-6-9-11.8v-6.4L20 9z"
+        fill="none"
         stroke="#fff"
         strokeWidth="2.2"
-        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      <circle cx="10.8" cy="20.8" r="1.4" fill="#fff" />
       <path
-        d="M18.6 15.8l2.7 2.7 4.5-5.2"
+        d="M16 19.8l3 3 5.4-6"
         fill="none"
-        stroke="#05261b"
-        strokeWidth="2.2"
+        stroke="#fff"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function Flame() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" {...LINE}>
+      <path d="M12 3c.6 3 4.5 4.6 4.5 9a4.5 4.5 0 0 1-9 0c0-2 .9-3.3 2-4.3.2 1.3.8 2 1.6 2.2C10.9 8.4 11 5.6 12 3z" />
     </svg>
   );
 }
@@ -703,6 +709,7 @@ function Intro({ onStart, onInfo }) {
             <div className="layer layer-2" />
             <div className="front">
               <Scenario item={DEMO_ITEM} revealed={false} />
+              <span className="stamp">Phish</span>
             </div>
           </div>
           <div className="answers demo-answers">
@@ -844,6 +851,7 @@ export default function App() {
   const [celebrate, setCelebrate] = useState(false);
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+  const [results, setResults] = useState([]);
   const [daily, setDaily] = useState(() => load("pol-daily", null));
 
   const playedToday = daily && daily.date === todayKey();
@@ -880,6 +888,7 @@ export default function App() {
       if (timeLeft <= 1) {
         setTimeLeft(0);
         setPicked("timeout");
+        setResults((r) => [...r, false]);
         setStreak(0);
       } else {
         setTimeLeft(timeLeft - 1);
@@ -898,6 +907,7 @@ export default function App() {
     setCopied(false);
     setCelebrate(false);
     setTimeLeft(TIME_LIMIT);
+    setResults([]);
     if (m === "daily" && playedToday) {
       setScore(daily.score);
       setFinished(true);
@@ -917,6 +927,7 @@ export default function App() {
     const right =
       mode === "hunt" ? choice === entry.correct : choice === entry.item.answer;
     setPicked(choice);
+    setResults((r) => [...r, right]);
     if (right) {
       const newStreak = streak + 1;
       setScore(score + 1);
@@ -929,7 +940,7 @@ export default function App() {
 
   function finish() {
     setFinished(true);
-    setCelebrate(score === deck.length);
+    setCelebrate(score >= Math.ceil(deck.length * 0.8));
     if (mode === "daily") {
       const result = { date: todayKey(), score };
       save("pol-daily", result);
@@ -1013,7 +1024,11 @@ export default function App() {
         </header>
         {celebrate && <Confetti />}
         <div className={`results pop ${celebrate ? "perfect" : ""}`}>
-          {celebrate && <p className="tag">Perfect score</p>}
+          {celebrate && (
+            <p className="tag">
+              {score === total ? "Perfect score" : "Great round"}
+            </p>
+          )}
           <div className="rank-emoji">{rank.emoji}</div>
           <h2 className="rank-title">{rank.title}</h2>
           <div className="big-score">
@@ -1050,7 +1065,6 @@ export default function App() {
     mode === "hunt" ? picked === entry.correct : picked === current.answer;
   const hints =
     current.answer === "phish" ? current.redFlags : current.safeSigns;
-  const progress = ((index + (picked ? 1 : 0)) / deck.length) * 100;
 
   return (
     <main className="screen narrow">
@@ -1065,16 +1079,47 @@ export default function App() {
         </span>
       </header>
 
-      <div className="progress">
-        <div className="progress-fill" style={{ width: `${progress}%` }} />
+      {picked && (
+        <div
+          key={index}
+          className={`flash ${correct ? "good" : "bad"}`}
+          aria-hidden="true"
+        />
+      )}
+      <div
+        className="segments"
+        role="img"
+        aria-label={`Question ${index + 1} of ${deck.length}`}
+      >
+        {deck.map((_, n) => (
+          <span
+            key={n}
+            className={
+              n < results.length
+                ? results[n]
+                  ? "right"
+                  : "wrong"
+                : n === index
+                  ? "now"
+                  : ""
+            }
+          />
+        ))}
       </div>
       <div className="meta">
         <span>
           Question {index + 1} of {deck.length}
         </span>
         <span className="meta-stats">
-          <span>Score {score}</span>
-          {mode !== "hunt" && <span>Streak {streak}</span>}
+          <span key={`score-${score}`} className="score-pop">
+            Score {score}
+          </span>
+          {mode !== "hunt" && (
+            <span key={`streak-${streak}`} className={`streak ${streak >= 3 ? "hot" : ""}`}>
+              <Flame />
+              {streak}
+            </span>
+          )}
         </span>
       </div>
 
