@@ -618,7 +618,8 @@ function InfoPanel({ onClose }) {
 
         <h3>About</h3>
         <p>
-          Phish or Legit? is a free game to make scam awareness more fun and make everyone more understanding on phising and keeping safe. The messages are fictional,
+          Phish or Legit? is a free project by {AUTHOR}, a cyber security
+          student, to make scam awareness more fun. The messages are fictional,
           written from common scam types seen in Australia. It's for learning
           and isn't professional advice.
         </p>
@@ -665,9 +666,19 @@ const DEMO_ITEM = {
   body: "Your parcel is on hold. Pay a $2.95 fee within 24 hours.",
   link: null,
   answer: "phish",
+  explanation:
+    "Delivery scams use small fees to steal card details. Check your parcel in the official app instead.",
+  redFlags: [
+    "Asks you to pay a fee by message",
+    "Urgent 24 hour deadline",
+    "No tracking number or delivery details",
+  ],
 };
 
 function Intro({ onStart, onInfo }) {
+  const [pick, setPick] = useState(null);
+  const gotIt = pick === DEMO_ITEM.answer;
+
   return (
     <main className="screen intro">
       <header className="topbar">
@@ -687,7 +698,10 @@ function Intro({ onStart, onInfo }) {
           </p>
 
           <div className="intro-actions">
-            <button className="cta" onClick={onStart}>
+            <button
+              className={`cta ${pick ? "nudge" : ""}`}
+              onClick={onStart}
+            >
               Start playing
             </button>
             <span className="cta-note">
@@ -702,23 +716,54 @@ function Intro({ onStart, onInfo }) {
           </ol>
         </div>
 
-        <div className="intro-demo" aria-hidden="true">
-          <div className="deck">
-            <div className="layer layer-3" />
-            <div className="layer layer-2" />
+        <div className="intro-demo">
+          <p className="try-label">
+            <span>Try it</span> Is this message a phish or legit?
+          </p>
+          <div className={`deck ${pick ? "hit" : ""}`}>
+            <div className="layer layer-3" aria-hidden="true" />
+            <div className="layer layer-2" aria-hidden="true" />
             <div className="front">
-              <Scenario item={DEMO_ITEM} revealed={false} />
-              <span className="stamp">Phish</span>
+              <Scenario item={DEMO_ITEM} revealed={Boolean(pick)} />
+              {pick && <span className="stamp">Phish</span>}
             </div>
           </div>
-          <div className="answers demo-answers">
-            <span className="answer phish demo">
-              <AnswerFace kind="phish" />
-            </span>
-            <span className="answer legit demo">
-              <AnswerFace kind="legit" />
-            </span>
-          </div>
+
+          {!pick ? (
+            <div className="answers demo-answers">
+              <button
+                className="answer phish"
+                onClick={() => setPick("phish")}
+              >
+                <AnswerFace kind="phish" />
+              </button>
+              <button
+                className="answer legit"
+                onClick={() => setPick("legit")}
+              >
+                <AnswerFace kind="legit" />
+              </button>
+            </div>
+          ) : (
+            <div
+              className={`demo-feedback ${gotIt ? "good" : "wrong"}`}
+              aria-live="polite"
+            >
+              <h3>{gotIt ? "Correct." : "Not quite."} This was a phish.</h3>
+              <p>{DEMO_ITEM.explanation}</p>
+              <ul className="flags">
+                {DEMO_ITEM.redFlags.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+              <div className="demo-actions">
+                <span>That's the whole game. Ready for more?</span>
+                <button className="ghost small" onClick={() => setPick(null)}>
+                  Try again
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

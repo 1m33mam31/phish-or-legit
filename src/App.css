@@ -1619,3 +1619,122 @@ body::before {
     display: none;
   }
 }
+
+/* =========================================================
+   Intro demo is now playable: label, one-shot stamp, feedback
+   ========================================================= */
+.try-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+.try-label span {
+  padding: 0.15rem 0.6rem;
+  color: #2a1700;
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: var(--amber);
+  border-radius: 999px;
+}
+
+/* the stamp and thud now play once, when you answer */
+.intro-demo .deck {
+  animation: none;
+}
+.intro-demo .deck.hit {
+  animation: hit 0.5s ease-out;
+}
+.stamp {
+  animation: slam 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) backwards;
+}
+.demo-answers .answer.phish {
+  animation: none;
+}
+@keyframes slam {
+  from {
+    opacity: 0;
+    transform: rotate(-9deg) scale(2.6);
+  }
+}
+@keyframes hit {
+  0% { transform: translateY(0); }
+  30% { transform: translateY(4px); }
+  55% { transform: translateY(-1px); }
+  100% { transform: translateY(0); }
+}
+
+.demo-feedback {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 4px solid;
+  border-radius: 16px;
+  animation: swap 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+.demo-feedback.good {
+  border-left-color: var(--green);
+}
+.demo-feedback.wrong {
+  border-left-color: var(--red);
+}
+.demo-feedback h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+}
+.demo-feedback p {
+  margin: 0 0 0.5rem;
+  color: #cbd5e6;
+  font-size: 0.95rem;
+}
+.demo-feedback .flags {
+  margin: 0 0 0.8rem;
+  font-size: 0.92rem;
+}
+.demo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.ghost.small {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+/* after answering, the Start playing button gently asks for a press */
+.cta.nudge {
+  animation: nudge 1.8s ease-in-out infinite;
+}
+@keyframes nudge {
+  0%, 100% {
+    box-shadow:
+      0 4px 0 #3b2fb0,
+      0 14px 30px -8px rgba(124, 92, 255, 0.75),
+      0 0 0 0 rgba(124, 92, 255, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 4px 0 #3b2fb0,
+      0 14px 30px -8px rgba(124, 92, 255, 0.75),
+      0 0 0 10px rgba(124, 92, 255, 0),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp,
+  .intro-demo .deck.hit,
+  .demo-feedback,
+  .cta.nudge {
+    animation: none;
+  }
+}
