@@ -698,10 +698,7 @@ function Intro({ onStart, onInfo }) {
           </p>
 
           <div className="intro-actions">
-            <button
-              className={`cta ${pick ? "nudge" : ""}`}
-              onClick={onStart}
-            >
+            <button className="cta" onClick={onStart}>
               Start playing
             </button>
             <span className="cta-note">
@@ -756,8 +753,11 @@ function Intro({ onStart, onInfo }) {
                   <li key={f}>{f}</li>
                 ))}
               </ul>
+              <p className="demo-ask">That's the whole game. Ready for more?</p>
               <div className="demo-actions">
-                <span>That's the whole game. Ready for more?</span>
+                <button className="cta nudge" onClick={onStart}>
+                  Start playing
+                </button>
                 <button className="ghost small" onClick={() => setPick(null)}>
                   Try again
                 </button>

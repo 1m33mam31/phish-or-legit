@@ -1738,3 +1738,18 @@ body::before {
     animation: none;
   }
 }
+
+/* demo feedback: the main button is now inside the card */
+.demo-feedback .demo-ask {
+  margin: 0 0 0.9rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+.demo-actions {
+  justify-content: flex-start;
+  gap: 0.8rem;
+}
+.demo-actions .cta {
+  padding: 0.75rem 1.3rem;
+  font-size: 1rem;
+}
