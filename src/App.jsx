@@ -1,44 +1,29 @@
 import { useState, useEffect, useMemo } from "react";
 import "@fontsource-variable/bricolage-grotesque";
-import base from "./data/scenarios.json";
-import more from "./data/scenarios-more.json";
+import {
+  scenarios,
+  MODES,
+  TIME_LIMIT,
+  hashString,
+  mulberry32,
+  shuffle,
+  todayKey,
+  untilTomorrow,
+  load,
+  save,
+  buildDeck,
+  parseSender,
+  getRank,
+  getTips,
+  BADGES,
+  emptyStats,
+  updateStats,
+  evaluateBadges,
+} from "./logic.js";
 import "./App.css";
-
-const scenarios = [...base, ...more];
 
 const AUTHOR = "Ralph"; // shown in the About section, change it if you like
 const REPO_URL = "https://github.com/1m33mam31/phish-or-legit";
-
-const TIME_LIMIT = 15;
-
-const MODES = {
-  daily: {
-    label: "Daily Challenge",
-    desc: "5 questions, same for everyone today. One try.",
-    size: 5,
-    time: "~1 min",
-  },
-  classic: {
-    label: "Classic",
-    desc: "10 random scenarios. Play as often as you like.",
-    size: 10,
-    time: "~3 min",
-  },
-  timed: {
-    label: "Timed Mode",
-    desc: `${TIME_LIMIT} seconds per question. Run out of time and it counts as wrong.`,
-    size: 10,
-    time: "~2 min",
-  },
-  hunt: {
-    label: "Red Flag Hunt",
-    desc: "Spot the real warning sign in 5 scams.",
-    size: 5,
-    time: "~1 min",
-  },
-};
-
-const DAILY_START = "2026-11-01";
 
 const CONFETTI_COLORS = [
   "#7aa2ff",
@@ -48,221 +33,6 @@ const CONFETTI_COLORS = [
   "#f472b6",
   "#a78bfa",
 ];
-
-// ---------- "What to do next" tips ----------
-const TIP_SETS = {
-  link: [
-    "Don't click links or reply. Delete the message.",
-    "Check your account by opening the official app or typing the real website yourself.",
-    "Report it to Scamwatch.",
-  ],
-  uni: [
-    "Don't enter your login.",
-    "Report it to your university IT or security team.",
-    "If you already entered your password, change it now.",
-  ],
-  callback: [
-    "Don't call the number in the message.",
-    "Check your account in the official app or by typing the real website yourself.",
-    "Report it to Scamwatch.",
-  ],
-  friend: [
-    "Don't click the link or log in anywhere.",
-    "Contact your friend another way so they can secure their account.",
-    "Report the account to the platform and to Scamwatch.",
-  ],
-  support: [
-    "Don't click the link or enter your login.",
-    "Check your account settings inside the app itself.",
-    "Report the account to the platform and to Scamwatch.",
-  ],
-  invest: [
-    "Don't send money or move to a private chat.",
-    "Block the account and report it to the platform.",
-    "Report it to Scamwatch.",
-  ],
-  family: [
-    "Don't send money.",
-    "Call your family member on the number you already have.",
-    "Block the new number and report it to Scamwatch.",
-  ],
-  stranger: [
-    "Don't reply, even to be polite.",
-    "Block the number.",
-    "Report it to Scamwatch.",
-  ],
-  code: [
-    "Never share verification codes with anyone.",
-    "Block the buyer and report them to the marketplace.",
-    "If you shared a code, secure your account and change your password.",
-  ],
-  deposit: [
-    "Don't pay before you can verify it is real.",
-    "Use official agents or ticket resale sites instead.",
-    "Report it to the platform and Scamwatch.",
-  ],
-  bankchange: [
-    "Don't send money to a new account.",
-    "Call your agent on a number you already have to check.",
-    "Report it to Scamwatch.",
-  ],
-  jobfee: [
-    "Don't send money, ID or bank details.",
-    "Check the company or organisation independently.",
-    "Report it to Scamwatch.",
-  ],
-  giftcard: [
-    "Don't buy gift cards or send codes.",
-    "Check with the person in person or through official university channels.",
-    "Report it to uni IT and Scamwatch.",
-  ],
-};
-
-const TIP_IDS = {
-  link: [1, 2, 3, 11, 12, 14, 23, 24, 27, 29, 34, 35, 42, 47, 49],
-  uni: [5, 15],
-  callback: [18],
-  friend: [8, 26],
-  support: [36],
-  invest: [17],
-  family: [20],
-  stranger: [44],
-  code: [21],
-  deposit: [7, 38],
-  bankchange: [40],
-  jobfee: [10, 30, 43],
-  giftcard: [32],
-};
-
-function getTips(item) {
-  const key =
-    Object.keys(TIP_IDS).find((k) => TIP_IDS[k].includes(item.id)) || "link";
-  const steps = [...TIP_SETS[key]];
-  if (item.type === "sms") {
-    steps.push("Forward scam texts to 0429 999 888 (ACMA) to help block them.");
-  }
-  return steps;
-}
-
-// ---------- helpers ----------
-function hashString(str) {
-  let h = 2166136261;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function mulberry32(seed) {
-  return function () {
-    seed |= 0;
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function shuffle(list, rand = Math.random) {
-  const copy = [...list];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
-function todayKey() {
-  return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
-}
-
-function untilTomorrow() {
-  const now = new Date();
-  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const mins = Math.ceil((next - now) / 60000);
-  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
-}
-
-function load(key, fallback) {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function save(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // storage unavailable, ignore
-  }
-}
-
-// Replays every day since DAILY_START, so each day skips the previous day's 5
-function dailyIds(dateStr) {
-  const last = dateStr < DAILY_START ? DAILY_START : dateStr;
-  const d = new Date(DAILY_START + "T12:00:00");
-  const end = new Date(last + "T12:00:00");
-  let prev = new Set();
-  let ids = [];
-  while (d <= end) {
-    const rand = mulberry32(hashString(d.toLocaleDateString("en-CA")));
-    ids = shuffle(
-      scenarios.filter((s) => !prev.has(s.id)),
-      rand
-    )
-      .slice(0, MODES.daily.size)
-      .map((s) => s.id);
-    prev = new Set(ids);
-    d.setDate(d.getDate() + 1);
-  }
-  return ids;
-}
-
-function buildDeck(mode) {
-  if (mode === "daily") {
-    return dailyIds(todayKey()).map((id) => ({
-      item: scenarios.find((s) => s.id === id),
-    }));
-  }
-  if (mode === "hunt") {
-    const phish = scenarios.filter((s) => s.answer === "phish");
-    const decoyPool = [...new Set(scenarios.flatMap((s) => s.safeSigns || []))];
-    return shuffle(phish)
-      .slice(0, MODES.hunt.size)
-      .map((item) => {
-        const correct =
-          item.redFlags[Math.floor(Math.random() * item.redFlags.length)];
-        const decoys = shuffle(decoyPool.filter((d) => d !== correct)).slice(
-          0,
-          3
-        );
-        return { item, correct, options: shuffle([correct, ...decoys]) };
-      });
-  }
-  // classic and timed
-  return shuffle(scenarios)
-    .slice(0, MODES[mode].size)
-    .map((item) => ({ item }));
-}
-
-function parseSender(from) {
-  const match = from.match(/^(.*?)\s*<(.+)>$/);
-  return match
-    ? { name: match[1], address: match[2] }
-    : { name: from, address: null };
-}
-
-function getRank(score, total) {
-  const pct = score / total;
-  if (pct >= 0.9) return { title: "Cyber Legend", emoji: "🛡️" };
-  if (pct >= 0.7) return { title: "Phish Hunter", emoji: "🎣" };
-  if (pct >= 0.4) return { title: "Scam Spotter", emoji: "🔍" };
-  return { title: "Easy Catch", emoji: "🐟" };
-}
 
 const TYPE_LABELS = {
   sms: "Text message",
@@ -344,9 +114,9 @@ function Mark({ size = 40 }) {
   );
 }
 
-function Flame() {
+function Flame({ size = 15 }) {
   return (
-    <svg viewBox="0 0 24 24" width="15" height="15" {...LINE}>
+    <svg viewBox="0 0 24 24" width={size} height={size} {...LINE}>
       <path d="M12 3c.6 3 4.5 4.6 4.5 9a4.5 4.5 0 0 1-9 0c0-2 .9-3.3 2-4.3.2 1.3.8 2 1.6 2.2C10.9 8.4 11 5.6 12 3z" />
     </svg>
   );
@@ -396,6 +166,342 @@ function AnswerFace({ kind, showKey }) {
         </kbd>
       )}
     </>
+  );
+}
+
+// ---------- badges ----------
+const BADGE_ICONS = {
+  first: () => (
+    <svg viewBox="0 0 24 24" width="24" height="24" {...LINE}>
+      <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9L12 3.5z" />
+    </svg>
+  ),
+  perfect: () => (
+    <svg viewBox="0 0 24 24" width="24" height="24" {...LINE}>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 12h.01" />
+    </svg>
+  ),
+  "daily-perfect": () => ICONS.daily(),
+  streak5: () => <Flame size={24} />,
+  clock: () => ICONS.timed(),
+  hunt: () => ICONS.hunt(),
+  regular: () => (
+    <svg viewBox="0 0 24 24" width="24" height="24" {...LINE}>
+      <rect x="3.5" y="5" width="17" height="15" rx="3" />
+      <path d="M3.5 10h17M8 3v4M16 3v4M9 15l2 2 4-4" />
+    </svg>
+  ),
+  sharp: () => (
+    <svg viewBox="0 0 24 24" width="24" height="24" {...LINE}>
+      <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" />
+      <circle cx="12" cy="12" r="2.8" />
+    </svg>
+  ),
+};
+
+function Badges({ earned }) {
+  const count = BADGES.filter((b) => earned[b.id]).length;
+  return (
+    <section className="badges" aria-labelledby="badges-title">
+      <div className="badges-head">
+        <h2 id="badges-title" className="section-label">
+          Badges
+        </h2>
+        <span className="badges-count">
+          {count} of {BADGES.length}
+        </span>
+      </div>
+      <ul className="badge-grid">
+        {BADGES.map((b) => {
+          const Icon = BADGE_ICONS[b.id];
+          const on = Boolean(earned[b.id]);
+          return (
+            <li key={b.id} className={`badge ${on ? "on" : "off"}`}>
+              <span className="badge-icon">
+                <Icon />
+              </span>
+              <span className="badge-text">
+                <strong>
+                  {b.name}
+                  <span className="sr-only">{on ? " (earned)" : " (locked)"}</span>
+                </strong>
+                <span>{b.hint}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function NewBadges({ ids }) {
+  if (!ids.length) return null;
+  return (
+    <div className="newbadges" role="status">
+      {ids.map((id) => {
+        const b = BADGES.find((x) => x.id === id);
+        const Icon = BADGE_ICONS[id];
+        return (
+          <div key={id} className="newbadge">
+            <span className="badge-icon">
+              <Icon />
+            </span>
+            <span className="badge-text">
+              <span className="newbadge-label">Badge unlocked</span>
+              <strong>{b.name}</strong>
+              <span>{b.hint}</span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------- share card image ----------
+// Draws a 1080 x 1080 picture of your score on a canvas. Nothing is uploaded.
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+async function drawShareCard({ score, total, label, rankTitle, sub, perfect }) {
+  const W = 1080;
+  const H = 1080;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  try {
+    await document.fonts.load('800 100px "Bricolage Grotesque Variable"');
+    await document.fonts.load('600 40px "Bricolage Grotesque Variable"');
+  } catch {
+    // no font loading support, the system font is used instead
+  }
+  const FONT = '"Bricolage Grotesque Variable", system-ui, sans-serif';
+
+  // background
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, "#090d16");
+  bg.addColorStop(1, "#1a1243");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  const glow = (x, y, r, color) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  };
+  glow(180, 120, 620, "rgba(91,124,255,0.35)");
+  glow(960, 300, 560, "rgba(139,92,246,0.3)");
+  glow(760, 1040, 640, "rgba(255,77,157,0.22)");
+  ctx.strokeStyle = "rgba(255,255,255,0.035)";
+  ctx.lineWidth = 1;
+  for (let p = 0; p <= W; p += 60) {
+    ctx.beginPath();
+    ctx.moveTo(p, 0);
+    ctx.lineTo(p, H);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, p);
+    ctx.lineTo(W, p);
+    ctx.stroke();
+  }
+
+  // logo badge and title
+  ctx.save();
+  ctx.translate(80, 76);
+  ctx.scale(2.4, 2.4);
+  const lg = ctx.createLinearGradient(0, 0, 40, 40);
+  lg.addColorStop(0, "#5b7cff");
+  lg.addColorStop(1, "#8b5cf6");
+  ctx.fillStyle = lg;
+  roundRect(ctx, 0, 0, 40, 40, 11);
+  ctx.fill();
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.stroke(new Path2D("M20 9l9 3.4v6.4c0 5.8-3.8 9.8-9 11.8-5.2-2-9-6-9-11.8v-6.4L20 9z"));
+  ctx.lineWidth = 2.4;
+  ctx.stroke(new Path2D("M16 19.8l3 3 5.4-6"));
+  ctx.restore();
+
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "left";
+  ctx.font = `800 54px ${FONT}`;
+  ctx.fillText("Phish or Legit?", 204, 152);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#aab6cd";
+  ctx.font = `600 38px ${FONT}`;
+  ctx.fillText(label, W - 80, 148);
+
+  // score ring
+  const cx = 540;
+  const cy = 470;
+  const r = 240;
+  const pct = total ? score / total : 0;
+  ctx.lineWidth = 46;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "rgba(255,255,255,0.1)";
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+  if (pct > 0) {
+    const rg = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+    if (perfect) {
+      rg.addColorStop(0, "#ffd166");
+      rg.addColorStop(1, "#ff7a2f");
+    } else {
+      rg.addColorStop(0, "#3ddc97");
+      rg.addColorStop(1, "#5b7cff");
+    }
+    ctx.strokeStyle = rg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
+    ctx.stroke();
+  }
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#fff";
+  ctx.font = `800 240px ${FONT}`;
+  ctx.fillText(String(score), cx, cy + 70);
+  ctx.fillStyle = "#aab6cd";
+  ctx.font = `600 46px ${FONT}`;
+  ctx.fillText(`out of ${total}`, cx, cy + 142);
+
+  // rank and extra line
+  ctx.fillStyle = "#fff";
+  ctx.font = `800 104px ${FONT}`;
+  ctx.fillText(rankTitle, cx, 850);
+  if (sub) {
+    ctx.fillStyle = perfect ? "#ffb84d" : "#aab6cd";
+    ctx.font = `600 40px ${FONT}`;
+    ctx.fillText(sub, cx, 922);
+  }
+
+  // footer
+  ctx.strokeStyle = "rgba(255,255,255,0.12)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(80, 975);
+  ctx.lineTo(W - 80, 975);
+  ctx.stroke();
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#fff";
+  ctx.font = `800 46px ${FONT}`;
+  ctx.fillText("Can you beat me?", 80, 1040);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#aab6cd";
+  ctx.font = `600 34px ${FONT}`;
+  ctx.fillText(window.location.host, W - 80, 1038);
+
+  return canvas;
+}
+
+function ShareCard({ score, total, label, rankTitle, sub, perfect, shareText }) {
+  const [canvas, setCanvas] = useState(null);
+  const [url, setUrl] = useState("");
+  const [status, setStatus] = useState("");
+  const [copied, setCopied] = useState(false);
+  const canShareFiles = useMemo(() => {
+    try {
+      return (
+        typeof navigator !== "undefined" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({
+          files: [new File([""], "a.png", { type: "image/png" })],
+        })
+      );
+    } catch {
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    drawShareCard({ score, total, label, rankTitle, sub, perfect }).then((c) => {
+      if (!alive || !c) return;
+      setCanvas(c);
+      setUrl(c.toDataURL("image/png"));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [score, total, label, rankTitle, sub, perfect]);
+
+  async function shareImage() {
+    if (!canvas) return;
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/png")
+    );
+    if (!blob) return;
+    const file = new File([blob], "phish-or-legit-score.png", {
+      type: "image/png",
+    });
+    if (canShareFiles) {
+      try {
+        await navigator.share({ files: [file], text: shareText });
+        return;
+      } catch (e) {
+        if (e && e.name === "AbortError") return;
+      }
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    setStatus("Saved to your downloads");
+  }
+
+  async function copyText() {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="sharecard">
+      <p className="share-title">Share your score</p>
+      {url ? (
+        <img
+          className="sharecard-img"
+          src={url}
+          alt={`Score card: ${score} out of ${total}, ${rankTitle}`}
+        />
+      ) : (
+        <div className="sharecard-skel" aria-hidden="true" />
+      )}
+      <div className="sharecard-actions">
+        <button className="ghost" onClick={shareImage} disabled={!canvas}>
+          {canShareFiles ? "Share image" : "Save image"}
+        </button>
+        <button className="ghost" onClick={copyText}>
+          {copied ? "Copied" : "Copy text"}
+        </button>
+      </div>
+      {status && (
+        <p className="results-sub" role="status">
+          {status}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -610,8 +716,8 @@ function InfoPanel({ onClose }) {
           <li>No account or sign-up.</li>
           <li>There is no analytics or tracking code in the game.</li>
           <li>
-            The only thing saved is your Daily Challenge result, in your own
-            browser.
+            Your Daily Challenge result, badges and round totals are saved in
+            your own browser, and nowhere else.
           </li>
           <li>Every scam link in the game is fake and can't be clicked.</li>
         </ul>
@@ -730,12 +836,14 @@ function Intro({ onStart, onInfo }) {
             <div className="answers demo-answers">
               <button
                 className="answer phish"
+                aria-label="Phish: it's a scam"
                 onClick={() => setPick("phish")}
               >
                 <AnswerFace kind="phish" />
               </button>
               <button
                 className="answer legit"
+                aria-label="Legit: it's safe"
                 onClick={() => setPick("legit")}
               >
                 <AnswerFace kind="legit" />
@@ -773,7 +881,7 @@ function Intro({ onStart, onInfo }) {
 }
 
 // ---------- menu screen ----------
-function Menu({ daily, playedToday, onSelect, onHome, onInfo }) {
+function Menu({ daily, playedToday, earned, onSelect, onHome, onInfo }) {
   const items = useMemo(
     () =>
       shuffle(
@@ -875,6 +983,8 @@ function Menu({ daily, playedToday, onSelect, onHome, onInfo }) {
         })}
       </div>
 
+      <Badges earned={earned} />
+
       <p className="foot">No account needed. Every link in the game is fake.</p>
     </main>
   );
@@ -893,10 +1003,12 @@ export default function App() {
   const [bestStreak, setBestStreak] = useState(0);
   const [finished, setFinished] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [results, setResults] = useState([]);
   const [daily, setDaily] = useState(() => load("pol-daily", null));
+  const [stats, setStats] = useState(() => load("pol-stats", emptyStats()));
+  const [badges, setBadges] = useState(() => load("pol-badges", {}));
+  const [newBadges, setNewBadges] = useState([]);
 
   const playedToday = daily && daily.date === todayKey();
 
@@ -948,8 +1060,8 @@ export default function App() {
     setPicked(null);
     setStreak(0);
     setBestStreak(0);
-    setCopied(false);
     setCelebrate(false);
+    setNewBadges([]);
     setTimeLeft(TIME_LIMIT);
     setResults([]);
     if (m === "daily" && playedToday) {
@@ -983,12 +1095,29 @@ export default function App() {
   }
 
   function finish() {
+    const total = deck.length;
     setFinished(true);
-    setCelebrate(score >= Math.ceil(deck.length * 0.8));
+    setCelebrate(score >= Math.ceil(total * 0.8));
     if (mode === "daily") {
       const result = { date: todayKey(), score };
       save("pol-daily", result);
       setDaily(result);
+    }
+
+    // running totals and badges
+    const round = { mode, score, total, bestStreak, date: todayKey() };
+    const nextStats = updateStats(stats, round);
+    const fresh = evaluateBadges(nextStats, round, badges);
+    setStats(nextStats);
+    save("pol-stats", nextStats);
+    setNewBadges(fresh);
+    if (fresh.length) {
+      const nextBadges = { ...badges };
+      fresh.forEach((id) => {
+        nextBadges[id] = todayKey();
+      });
+      setBadges(nextBadges);
+      save("pol-badges", nextBadges);
     }
   }
 
@@ -1024,6 +1153,7 @@ export default function App() {
         <Menu
           daily={daily}
           playedToday={playedToday}
+          earned={badges}
           onSelect={startMode}
           onHome={() => setStarted(false)}
           onInfo={() => setShowInfo(true)}
@@ -1045,14 +1175,19 @@ export default function App() {
         ? `Phish or Legit? Daily ${todayKey()}: ${score}/${total}. Can you beat me? ${window.location.href}`
         : `I scored ${score}/${total} in ${label} on Phish or Legit? (${rank.title}). Can you beat me? ${window.location.href}`;
 
-    async function copyShare() {
-      try {
-        await navigator.clipboard.writeText(shareText);
-        setCopied(true);
-      } catch {
-        setCopied(false);
-      }
-    }
+    const perfect = score === total;
+    const dateText = new Date().toLocaleDateString("en-AU", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const sub = perfect
+      ? "Perfect score"
+      : mode === "daily"
+        ? `Daily challenge, ${dateText}`
+        : mode !== "hunt"
+          ? `Best streak ${bestStreak}`
+          : "";
 
     return (
       <main className="screen narrow">
@@ -1083,16 +1218,22 @@ export default function App() {
           {mode === "daily" && (
             <p className="results-sub">Come back tomorrow for a new set.</p>
           )}
-          <div className="share">{shareText}</div>
+          <NewBadges ids={newBadges} />
+          <ShareCard
+            score={score}
+            total={total}
+            label={label}
+            rankTitle={rank.title}
+            sub={sub}
+            perfect={perfect}
+            shareText={shareText}
+          />
           <div className="results-actions">
             {mode !== "daily" && (
               <button className="cta" onClick={() => startMode(mode)}>
                 Play again
               </button>
             )}
-            <button className="ghost" onClick={copyShare}>
-              {copied ? "Copied" : "Copy score"}
-            </button>
             <button className="ghost" onClick={backToMenu}>
               Menu
             </button>
@@ -1216,12 +1357,14 @@ export default function App() {
             <div className="answers">
               <button
                 className="answer phish"
+                aria-label="Phish: it's a scam"
                 onClick={() => choose("phish")}
               >
                 <AnswerFace kind="phish" showKey />
               </button>
               <button
                 className="answer legit"
+                aria-label="Legit: it's safe"
                 onClick={() => choose("legit")}
               >
                 <AnswerFace kind="legit" showKey />
