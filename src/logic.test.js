@@ -104,6 +104,12 @@ describe("decks", () => {
     }
   });
 
+  it("Timed Mode uses all 50 scenarios exactly once", () => {
+    const deck = buildDeck("timed");
+    expect(deck).toHaveLength(50);
+    expect(new Set(deck.map((e) => e.item.id)).size).toBe(50);
+  });
+
   it("Red Flag Hunt only uses scams, with 4 different options", () => {
     for (let i = 0; i < 20; i++) {
       for (const entry of buildDeck("hunt")) {
@@ -188,9 +194,9 @@ describe("badges", () => {
     expect(ids).not.toContain("streak5");
   });
 
-  it("awards Beat the clock for 8 or more in Timed Mode", () => {
-    const good = round({ mode: "timed", score: 8 });
-    const bad = round({ mode: "timed", score: 7 });
+  it("awards Beat the clock for 80% or more in Timed Mode", () => {
+    const good = round({ mode: "timed", score: 40, total: 50 });
+    const bad = round({ mode: "timed", score: 39, total: 50 });
     expect(evaluateBadges(updateStats(emptyStats(), good), good, {})).toContain(
       "clock"
     );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useId } from "react";
 import "@fontsource-variable/bricolage-grotesque";
 import {
   scenarios,
@@ -86,15 +86,16 @@ function Chevron() {
 
 // The logo: a simple shield with a tick on a rounded badge.
 function Mark({ size = 40 }) {
+  const gid = `mark-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
       <defs>
-        <linearGradient id="mark-grad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#5b7cff" />
           <stop offset="1" stopColor="#8b5cf6" />
         </linearGradient>
       </defs>
-      <rect width="40" height="40" rx="11" fill="url(#mark-grad)" />
+      <rect width="40" height="40" rx="11" fill={`url(#${gid})`} />
       <path
         d="M20 9l9 3.4v6.4c0 5.8-3.8 9.8-9 11.8-5.2-2-9-6-9-11.8v-6.4L20 9z"
         fill="none"
@@ -591,7 +592,7 @@ function InboxStack({ items }) {
         <div className="layer layer-2" aria-hidden="true" />
         <article className="front note" key={item.id}>
           <header className="note-head">
-            <span className="note-app" aria-hidden="true" />
+            <Mark size={18} />
             <span>Inbox</span>
             <span className="note-time">now</span>
           </header>
@@ -895,7 +896,7 @@ function Menu({ daily, playedToday, earned, onSelect, onHome, onInfo }) {
     { key: "classic", blurb: "Ten random messages. Play as often as you like." },
     {
       key: "timed",
-      blurb: "Beat the clock. Running out of time counts as wrong.",
+      blurb: "All 50 messages against the clock. Finish them all to win.",
     },
     { key: "hunt", blurb: "It's a scam. Pick the real warning sign." },
   ];
@@ -1097,7 +1098,7 @@ export default function App() {
   function finish() {
     const total = deck.length;
     setFinished(true);
-    setCelebrate(score >= Math.ceil(total * 0.8));
+    setCelebrate(mode === "timed" || score >= Math.ceil(total * 0.8));
     if (mode === "daily") {
       const result = { date: todayKey(), score };
       save("pol-daily", result);
@@ -1205,7 +1206,11 @@ export default function App() {
         <div className={`results pop ${celebrate ? "perfect" : ""}`}>
           {celebrate && (
             <p className="tag">
-              {score === total ? "Perfect score" : "Great round"}
+              {score === total
+                ? "Perfect score"
+                : mode === "timed"
+                  ? `All ${total} finished`
+                  : "Great round"}
             </p>
           )}
           <div className="rank-emoji">{rank.emoji}</div>
@@ -1272,7 +1277,7 @@ export default function App() {
         />
       )}
       <div
-        className="segments"
+        className={`segments ${deck.length > 12 ? "dense" : ""}`}
         role="img"
         aria-label={`Question ${index + 1} of ${deck.length}`}
       >
