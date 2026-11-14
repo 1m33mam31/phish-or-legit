@@ -94,8 +94,7 @@ describe("playing", () => {
     for (let i = 0; i < 10; i++) await answerAndContinue(user);
 
     expect(screen.getByText("/ 10")).toBeInTheDocument();
-    // more than one badge can unlock at once (for example a 5 in a row streak)
-    expect(screen.getAllByText(/badge unlocked/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/badge unlocked/i)).toBeInTheDocument();
     expect(screen.getAllByText(/first catch/i).length).toBeGreaterThan(0);
     expect(JSON.parse(localStorage.getItem("pol-stats")).rounds).toBe(1);
     expect(JSON.parse(localStorage.getItem("pol-badges"))).toHaveProperty("first");

@@ -22,9 +22,9 @@ export const MODES = {
   },
   timed: {
     label: "Timed Mode",
-    desc: `${TIME_LIMIT} seconds per question across all 50 messages. Finish them all to win.`,
-    size: 50,
-    time: "~10 min",
+    desc: `${TIME_LIMIT} seconds per question. Run out of time and it counts as wrong.`,
+    size: 10,
+    time: "~2 min",
   },
   hunt: {
     label: "Red Flag Hunt",
@@ -284,9 +284,8 @@ export const BADGES = [
   {
     id: "clock",
     name: "Beat the clock",
-    hint: "Score 80% or more in Timed Mode",
-    earned: (stats, round) =>
-      round.mode === "timed" && round.score >= Math.ceil(round.total * 0.8),
+    hint: "Score 8 or more in Timed Mode",
+    earned: (stats, round) => round.mode === "timed" && round.score >= 8,
   },
   {
     id: "hunt",
