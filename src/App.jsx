@@ -724,8 +724,7 @@ function InfoPanel({ onClose }) {
 
         <h3>About</h3>
         <p>
-          Phish or Legit? is a free project by {AUTHOR}, a cyber security
-          student, to make scam awareness more fun. The messages are fictional,
+          Phish or Legit? is a free project by {AUTHOR}, to make scam awareness more fun. The messages are fictional,
           written from common scam types seen in Australia. It's for learning
           and isn't professional advice.
         </p>
