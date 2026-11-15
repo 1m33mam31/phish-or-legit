@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useId } from "react";
 import "@fontsource-variable/bricolage-grotesque";
 import {
   scenarios,
@@ -21,6 +21,15 @@ import {
   evaluateBadges,
 } from "./logic.js";
 import "./App.css";
+import Buddy, { buddyOps, drawBuddy, moodForScore } from "./Buddy.jsx";
+import { RewardsStrip, CaseScreen, CollectionScreen } from "./Rewards.jsx";
+import {
+  ITEMS_BY_ID,
+  normalizeRewards,
+  casesForRound,
+  addCases,
+  claimFreeCase,
+} from "./rewards.js";
 
 const AUTHOR = "Ralph"; // shown in the About section, change it if you like
 const REPO_URL = "https://github.com/1m33mam31/phish-or-legit";
@@ -86,15 +95,16 @@ function Chevron() {
 
 // The logo: a simple shield with a tick on a rounded badge.
 function Mark({ size = 40 }) {
+  const gid = `mark-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
       <defs>
-        <linearGradient id="mark-grad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#5b7cff" />
           <stop offset="1" stopColor="#8b5cf6" />
         </linearGradient>
       </defs>
-      <rect width="40" height="40" rx="11" fill="url(#mark-grad)" />
+      <rect width="40" height="40" rx="11" fill={`url(#${gid})`} />
       <path
         d="M20 9l9 3.4v6.4c0 5.8-3.8 9.8-9 11.8-5.2-2-9-6-9-11.8v-6.4L20 9z"
         fill="none"
@@ -273,7 +283,18 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-async function drawShareCard({ score, total, label, rankTitle, sub, perfect }) {
+async function drawShareCard({
+  score,
+  total,
+  label,
+  rankTitle,
+  sub,
+  perfect,
+  palette,
+  ops,
+  title,
+}) {
+  const pal = palette || ITEMS_BY_ID["theme-default"].palette;
   const W = 1080;
   const H = 1080;
   const canvas = document.createElement("canvas");
@@ -292,8 +313,8 @@ async function drawShareCard({ score, total, label, rankTitle, sub, perfect }) {
 
   // background
   const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, "#090d16");
-  bg.addColorStop(1, "#1a1243");
+  bg.addColorStop(0, pal.bg0);
+  bg.addColorStop(1, pal.bg1);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
   const glow = (x, y, r, color) => {
@@ -303,9 +324,9 @@ async function drawShareCard({ score, total, label, rankTitle, sub, perfect }) {
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
   };
-  glow(180, 120, 620, "rgba(91,124,255,0.35)");
-  glow(960, 300, 560, "rgba(139,92,246,0.3)");
-  glow(760, 1040, 640, "rgba(255,77,157,0.22)");
+  glow(180, 120, 620, pal.glow1);
+  glow(960, 300, 560, pal.glow2);
+  glow(760, 1040, 640, pal.glow3);
   ctx.strokeStyle = "rgba(255,255,255,0.035)";
   ctx.lineWidth = 1;
   for (let p = 0; p <= W; p += 60) {
@@ -346,6 +367,12 @@ async function drawShareCard({ score, total, label, rankTitle, sub, perfect }) {
   ctx.fillStyle = "#aab6cd";
   ctx.font = `600 38px ${FONT}`;
   ctx.fillText(label, W - 80, 148);
+  if (title) {
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#ffb84d";
+    ctx.font = `700 34px ${FONT}`;
+    ctx.fillText(title, 204, 198);
+  }
 
   // score ring
   const cx = 540;
@@ -364,8 +391,8 @@ async function drawShareCard({ score, total, label, rankTitle, sub, perfect }) {
       rg.addColorStop(0, "#ffd166");
       rg.addColorStop(1, "#ff7a2f");
     } else {
-      rg.addColorStop(0, "#3ddc97");
-      rg.addColorStop(1, "#5b7cff");
+      rg.addColorStop(0, pal.ring0);
+      rg.addColorStop(1, pal.ring1);
     }
     ctx.strokeStyle = rg;
     ctx.beginPath();
@@ -379,6 +406,9 @@ async function drawShareCard({ score, total, label, rankTitle, sub, perfect }) {
   ctx.fillStyle = "#aab6cd";
   ctx.font = `600 46px ${FONT}`;
   ctx.fillText(`out of ${total}`, cx, cy + 142);
+
+  // the mascot, wearing whatever is equipped
+  if (ops) drawBuddy(ctx, ops, 805, 555, 215);
 
   // rank and extra line
   ctx.fillStyle = "#fff";
@@ -409,7 +439,17 @@ async function drawShareCard({ score, total, label, rankTitle, sub, perfect }) {
   return canvas;
 }
 
-function ShareCard({ score, total, label, rankTitle, sub, perfect, shareText }) {
+function ShareCard({
+  score,
+  total,
+  label,
+  rankTitle,
+  sub,
+  perfect,
+  shareText,
+  mood,
+  equipped,
+}) {
   const [canvas, setCanvas] = useState(null);
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState("");
@@ -428,9 +468,22 @@ function ShareCard({ score, total, label, rankTitle, sub, perfect, shareText }) 
     }
   }, []);
 
+  const eqKey = JSON.stringify(equipped);
   useEffect(() => {
     let alive = true;
-    drawShareCard({ score, total, label, rankTitle, sub, perfect }).then((c) => {
+    const theme = ITEMS_BY_ID[equipped.theme];
+    const titleItem = ITEMS_BY_ID[equipped.title];
+    drawShareCard({
+      score,
+      total,
+      label,
+      rankTitle,
+      sub,
+      perfect,
+      palette: theme && theme.palette,
+      ops: buddyOps(mood, equipped),
+      title: titleItem && titleItem.text,
+    }).then((c) => {
       if (!alive || !c) return;
       setCanvas(c);
       setUrl(c.toDataURL("image/png"));
@@ -438,7 +491,7 @@ function ShareCard({ score, total, label, rankTitle, sub, perfect, shareText }) 
     return () => {
       alive = false;
     };
-  }, [score, total, label, rankTitle, sub, perfect]);
+  }, [score, total, label, rankTitle, sub, perfect, mood, eqKey]);
 
   async function shareImage() {
     if (!canvas) return;
@@ -591,7 +644,7 @@ function InboxStack({ items }) {
         <div className="layer layer-2" aria-hidden="true" />
         <article className="front note" key={item.id}>
           <header className="note-head">
-            <span className="note-app" aria-hidden="true" />
+            <Mark size={18} />
             <span>Inbox</span>
             <span className="note-time">now</span>
           </header>
@@ -716,8 +769,8 @@ function InfoPanel({ onClose }) {
           <li>No account or sign-up.</li>
           <li>There is no analytics or tracking code in the game.</li>
           <li>
-            Your Daily Challenge result, badges and round totals are saved in
-            your own browser, and nowhere else.
+            Your Daily Challenge result, badges, rewards and round totals are
+            saved in your own browser, and nowhere else.
           </li>
           <li>Every scam link in the game is fake and can't be clicked.</li>
         </ul>
@@ -880,7 +933,18 @@ function Intro({ onStart, onInfo }) {
 }
 
 // ---------- menu screen ----------
-function Menu({ daily, playedToday, earned, onSelect, onHome, onInfo }) {
+function Menu({
+  daily,
+  playedToday,
+  earned,
+  rewards,
+  onSelect,
+  onHome,
+  onInfo,
+  onOpenCase,
+  onCollection,
+  onClaim,
+}) {
   const items = useMemo(
     () =>
       shuffle(
@@ -894,7 +958,7 @@ function Menu({ daily, playedToday, earned, onSelect, onHome, onInfo }) {
     { key: "classic", blurb: "Ten random messages. Play as often as you like." },
     {
       key: "timed",
-      blurb: "Beat the clock. Running out of time counts as wrong.",
+      blurb: "All 50 messages against the clock. Finish them all to win.",
     },
     { key: "hunt", blurb: "It's a scam. Pick the real warning sign." },
   ];
@@ -982,11 +1046,31 @@ function Menu({ daily, playedToday, earned, onSelect, onHome, onInfo }) {
         })}
       </div>
 
+      <RewardsStrip
+        rewards={rewards}
+        dayKey={todayKey()}
+        onOpen={onOpenCase}
+        onCollection={onCollection}
+        onClaim={onClaim}
+      />
+
       <Badges earned={earned} />
 
       <p className="foot">No account needed. Every link in the game is fake.</p>
     </main>
   );
+}
+
+// What the mascot says after each answer
+function reactionFor({ picked, correct, streak, index }) {
+  const pick = (list) => list[index % list.length];
+  if (picked === "timeout") return pick(["Time's up!", "Too slow this time."]);
+  if (correct) {
+    return streak >= 3
+      ? pick(["On fire!", "Unstoppable!", "Streak mode!"])
+      : pick(["Nice catch!", "Sharp eyes!", "Nailed it!", "You got it!"]);
+  }
+  return pick(["Tricky one!", "So close!", "They fool everyone.", "Now you know!"]);
 }
 
 // ---------- the app ----------
@@ -1008,6 +1092,11 @@ export default function App() {
   const [stats, setStats] = useState(() => load("pol-stats", emptyStats()));
   const [badges, setBadges] = useState(() => load("pol-badges", {}));
   const [newBadges, setNewBadges] = useState([]);
+  const [rewards, setRewards] = useState(() =>
+    normalizeRewards(load("pol-rewards", null))
+  );
+  const [view, setView] = useState(null); // null, "cases" or "collection"
+  const [casesEarned, setCasesEarned] = useState(0);
 
   const playedToday = daily && daily.date === todayKey();
 
@@ -1061,6 +1150,7 @@ export default function App() {
     setBestStreak(0);
     setCelebrate(false);
     setNewBadges([]);
+    setCasesEarned(0);
     setTimeLeft(TIME_LIMIT);
     setResults([]);
     if (m === "daily" && playedToday) {
@@ -1096,7 +1186,7 @@ export default function App() {
   function finish() {
     const total = deck.length;
     setFinished(true);
-    setCelebrate(score >= Math.ceil(total * 0.8));
+    setCelebrate(mode === "timed" || score >= Math.ceil(total * 0.8));
     if (mode === "daily") {
       const result = { date: todayKey(), score };
       save("pol-daily", result);
@@ -1118,6 +1208,16 @@ export default function App() {
       setBadges(nextBadges);
       save("pol-badges", nextBadges);
     }
+
+    // cases for the rewards screen
+    const earnedCases = casesForRound(round);
+    changeRewards(addCases(rewards, earnedCases));
+    setCasesEarned(earnedCases);
+  }
+
+  function changeRewards(next) {
+    setRewards(next);
+    save("pol-rewards", next);
   }
 
   function next() {
@@ -1145,6 +1245,28 @@ export default function App() {
     );
   }
 
+  // ---------- Cases and collection ----------
+  if (view === "cases") {
+    return (
+      <CaseScreen
+        rewards={rewards}
+        onChange={changeRewards}
+        onBack={() => setView(null)}
+        onCollection={() => setView("collection")}
+      />
+    );
+  }
+  if (view === "collection") {
+    return (
+      <CollectionScreen
+        rewards={rewards}
+        onChange={changeRewards}
+        onBack={() => setView(null)}
+        onOpen={() => setView("cases")}
+      />
+    );
+  }
+
   // ---------- Menu ----------
   if (!mode) {
     return (
@@ -1153,6 +1275,12 @@ export default function App() {
           daily={daily}
           playedToday={playedToday}
           earned={badges}
+          rewards={rewards}
+          onOpenCase={() => setView("cases")}
+          onCollection={() => setView("collection")}
+          onClaim={() =>
+            changeRewards(claimFreeCase(rewards, todayKey()))
+          }
           onSelect={startMode}
           onHome={() => setStarted(false)}
           onInfo={() => setShowInfo(true)}
@@ -1204,11 +1332,25 @@ export default function App() {
         <div className={`results pop ${celebrate ? "perfect" : ""}`}>
           {celebrate && (
             <p className="tag">
-              {score === total ? "Perfect score" : "Great round"}
+              {score === total
+                ? "Perfect score"
+                : mode === "timed"
+                  ? `All ${total} finished`
+                  : "Great round"}
             </p>
           )}
-          <div className="rank-emoji">{rank.emoji}</div>
+          <div className="rank-emoji">
+            <Buddy
+              mood={moodForScore(score, total)}
+              equipped={rewards.equipped}
+              size={92}
+              label="Your mascot"
+            />
+          </div>
           <h2 className="rank-title">{rank.title}</h2>
+          {rewards.equipped.title && (
+            <p className="col-title">{ITEMS_BY_ID[rewards.equipped.title].text}</p>
+          )}
           <div className="big-score">
             <CountUp value={score} />
             <span>/ {total}</span>
@@ -1218,6 +1360,16 @@ export default function App() {
             <p className="results-sub">Come back tomorrow for a new set.</p>
           )}
           <NewBadges ids={newBadges} />
+          {casesEarned > 0 && (
+            <div className="cases-earned">
+              <strong>
+                +{casesEarned} {casesEarned === 1 ? "case" : "cases"} earned
+              </strong>
+              <button className="ghost small" onClick={() => setView("cases")}>
+                Open now
+              </button>
+            </div>
+          )}
           <ShareCard
             score={score}
             total={total}
@@ -1226,6 +1378,8 @@ export default function App() {
             sub={sub}
             perfect={perfect}
             shareText={shareText}
+            mood={moodForScore(score, total)}
+            equipped={rewards.equipped}
           />
           <div className="results-actions">
             {mode !== "daily" && (
@@ -1271,7 +1425,7 @@ export default function App() {
         />
       )}
       <div
-        className="segments"
+        className={`segments ${deck.length > 12 ? "dense" : ""}`}
         role="img"
         aria-label={`Question ${index + 1} of ${deck.length}`}
       >
@@ -1325,6 +1479,15 @@ export default function App() {
 
       <div className={`stage ${picked && !correct ? "shake" : ""}`}>
         <Scenario item={current} revealed={Boolean(picked)} />
+        {picked && (
+          <span
+            className={`stamp ingame ${rewards.equipped.stamp} ${
+              current.answer === "phish" ? "is-phish" : "is-legit"
+            }`}
+          >
+            {current.answer === "phish" ? "Phish" : "Legit"}
+          </span>
+        )}
       </div>
 
       {mode === "hunt" ? (
@@ -1378,6 +1541,23 @@ export default function App() {
 
       {picked && (
         <div className={`feedback ${correct ? "good" : "wrong"}`}>
+          <div className="buddy-row">
+            <Buddy
+              key={index}
+              mood={
+                picked === "timeout" || !correct
+                  ? "wince"
+                  : streak >= 3
+                    ? "wow"
+                    : "cheer"
+              }
+              equipped={rewards.equipped}
+              size={64}
+            />
+            <p className="buddy-line buddy-pop">
+              {reactionFor({ picked, correct, streak, index })}
+            </p>
+          </div>
           <h3>
             {picked === "timeout"
               ? "Time's up."

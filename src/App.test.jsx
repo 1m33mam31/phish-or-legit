@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App.jsx";
@@ -94,7 +94,8 @@ describe("playing", () => {
     for (let i = 0; i < 10; i++) await answerAndContinue(user);
 
     expect(screen.getByText("/ 10")).toBeInTheDocument();
-    expect(screen.getByText(/badge unlocked/i)).toBeInTheDocument();
+    // more than one badge can unlock at once (for example a 5 in a row streak)
+    expect(screen.getAllByText(/badge unlocked/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/first catch/i).length).toBeGreaterThan(0);
     expect(JSON.parse(localStorage.getItem("pol-stats")).rounds).toBe(1);
     expect(JSON.parse(localStorage.getItem("pol-badges"))).toHaveProperty("first");
@@ -112,5 +113,87 @@ describe("playing", () => {
       screen.getByRole("button", { name: /see today's result/i })
     ).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem("pol-daily")).score).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("rewards", () => {
+  async function toMenu(user) {
+    await openMenu(user);
+  }
+
+  it("shows the rewards strip with the starter case", async () => {
+    const user = userEvent.setup();
+    await toMenu(user);
+    expect(screen.getByRole("heading", { name: /^rewards$/i })).toBeInTheDocument();
+    expect(screen.getByText(/to open/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /claim free case/i })).toBeInTheDocument();
+  });
+
+  it("claims the free daily case only once", async () => {
+    const user = userEvent.setup();
+    await toMenu(user);
+    await user.click(screen.getByRole("button", { name: /claim free case/i }));
+    expect(screen.queryByRole("button", { name: /claim free case/i })).not.toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("pol-rewards")).cases).toBe(2);
+  });
+
+  it("opens a case and puts the prize in the collection", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(Math, "random").mockReturnValue(0.1);
+    await toMenu(user);
+    await user.click(screen.getByRole("button", { name: /open a case/i }));
+    expect(screen.getByRole("heading", { name: /phish case/i })).toBeInTheDocument();
+    expect(screen.getByText(/drop rates/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^open case$/i }));
+    await user.click(screen.getByRole("button", { name: /^skip$/i }));
+    expect(screen.getByText(/new item added to your collection/i)).toBeInTheDocument();
+    expect(screen.getByText(/no cases left/i)).toBeInTheDocument();
+
+    const saved = JSON.parse(localStorage.getItem("pol-rewards"));
+    expect(saved.cases).toBe(0);
+    expect(Object.keys(saved.owned)).toHaveLength(1);
+    vi.restoreAllMocks();
+  });
+
+  it("equips an owned item from the collection", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "pol-rewards",
+      JSON.stringify({ cases: 0, scrap: 0, owned: { "hat-cap": true }, equipped: {} })
+    );
+    await toMenu(user);
+    await user.click(screen.getByRole("button", { name: /^collection$/i }));
+    expect(screen.getByRole("heading", { name: /^collection$/i })).toBeInTheDocument();
+    expect(screen.getByText(/1 of 24 items collected/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^equip$/i }));
+    expect(JSON.parse(localStorage.getItem("pol-rewards")).equipped.hat).toBe("hat-cap");
+    expect(screen.getByRole("button", { name: /^remove$/i })).toBeInTheDocument();
+  });
+
+  it("crafts a missing item with scrap", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "pol-rewards",
+      JSON.stringify({ cases: 0, scrap: 25, owned: {}, equipped: {} })
+    );
+    await toMenu(user);
+    await user.click(screen.getByRole("button", { name: /^collection$/i }));
+    // 25 scrap is enough for a Common item (20 scrap), so those buttons are enabled
+    const buttons = screen.getAllByRole("button", { name: /craft \(20 scrap\)/i });
+    await user.click(buttons[0]);
+    const saved = JSON.parse(localStorage.getItem("pol-rewards"));
+    expect(Object.keys(saved.owned)).toHaveLength(1);
+    expect(saved.scrap).toBe(5);
+  });
+
+  it("earns cases for finishing a round", async () => {
+    const user = userEvent.setup();
+    await toMenu(user);
+    await user.click(screen.getByRole("button", { name: /classic/i }));
+    for (let i = 0; i < 10; i++) await answerAndContinue(user);
+    expect(screen.getByText(/cases? earned/i)).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("pol-rewards")).cases).toBeGreaterThanOrEqual(2);
   });
 });

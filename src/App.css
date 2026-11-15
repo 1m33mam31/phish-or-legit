@@ -1913,3 +1913,12 @@ body::before {
     animation: none;
   }
 }
+
+/* a 50 question run needs thinner progress segments */
+.segments.dense {
+  gap: 2px;
+}
+.segments.dense span {
+  height: 6px;
+  border-radius: 2px;
+}
