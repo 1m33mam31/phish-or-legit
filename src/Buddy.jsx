@@ -1,4 +1,4 @@
-import { ITEMS_BY_ID } from "./rewards.js";
+import { ITEMS_BY_ID, auraFor } from "./rewards.js";
 
 // The mascot: a friendly purple shield. Its shapes are plain data (see buddyOps),
 // so the same drawing can be shown on the page (SVG) and on the share image (canvas).
@@ -99,8 +99,24 @@ function Shape({ op }) {
   return <path d={op.d} {...style} />;
 }
 
-export default function Buddy({ mood = "happy", equipped = {}, size = 96, label }) {
+// A gold glow, a ring and orbiting sparkles around anything legendary.
+export function Aura({ children, size = 64 }) {
   return (
+    <span className="aura-wrap" style={{ "--s": `${size}px` }}>
+      <span className="aura-glow" aria-hidden="true" />
+      <span className="aura-ring" aria-hidden="true" />
+      <span className="aura-orbit" aria-hidden="true">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <span key={i} className="aura-spark" style={{ "--a": `${i * 60}deg`, "--d": `${i * 0.27}s` }} />
+        ))}
+      </span>
+      {children}
+    </span>
+  );
+}
+
+export default function Buddy({ mood = "happy", equipped = {}, size = 96, label }) {
+  const svg = (
     <svg
       className={`buddy buddy-${mood}`}
       viewBox="-14 -14 128 128"
@@ -115,6 +131,7 @@ export default function Buddy({ mood = "happy", equipped = {}, size = 96, label 
       ))}
     </svg>
   );
+  return auraFor(equipped) ? <Aura size={size}>{svg}</Aura> : svg;
 }
 
 // Draws the same shapes onto a canvas (used by the share image).

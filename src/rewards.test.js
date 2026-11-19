@@ -23,6 +23,7 @@ import {
   canCraft,
   craftItem,
   equipItem,
+  auraFor,
 } from "./rewards.js";
 import { buddyOps, moodForScore } from "./Buddy.jsx";
 
@@ -283,5 +284,16 @@ describe("mascot", () => {
     expect(moodForScore(9, 10)).toBe("cheer");
     expect(moodForScore(5, 10)).toBe("happy");
     expect(moodForScore(1, 10)).toBe("wince");
+  });
+});
+
+describe("legendary aura", () => {
+  it("only comes from legendary hats, glasses and back items", () => {
+    expect(auraFor({})).toBeNull();
+    expect(auraFor({ hat: "hat-cap", face: "face-shades", back: "back-wings" })).toBeNull();
+    expect(auraFor({ hat: "hat-halo" })).toBe("legendary");
+    expect(auraFor({ face: "face-sparkle" })).toBe("legendary");
+    // legendary stamps, themes and titles do not change the mascot
+    expect(auraFor({ stamp: "stamp-holo", theme: "theme-aurora", title: "title-legend" })).toBeNull();
   });
 });

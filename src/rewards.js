@@ -403,3 +403,9 @@ export function equipItem(rewards, id) {
     },
   };
 }
+
+// A legendary hat, glasses or back item gives the mascot a gold aura.
+export function auraFor(equipped = {}) {
+  const worn = ["hat", "face", "back"].map((slot) => ITEMS_BY_ID[equipped[slot]]);
+  return worn.some((item) => item && item.rarity === "legendary") ? "legendary" : null;
+}

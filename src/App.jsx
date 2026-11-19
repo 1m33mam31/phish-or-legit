@@ -25,6 +25,7 @@ import Buddy, { buddyOps, drawBuddy, moodForScore } from "./Buddy.jsx";
 import { RewardsStrip, CaseScreen, CollectionScreen } from "./Rewards.jsx";
 import {
   ITEMS_BY_ID,
+  auraFor,
   normalizeRewards,
   casesForRound,
   addCases,
@@ -293,6 +294,7 @@ async function drawShareCard({
   palette,
   ops,
   title,
+  aura,
 }) {
   const pal = palette || ITEMS_BY_ID["theme-default"].palette;
   const W = 1080;
@@ -408,6 +410,33 @@ async function drawShareCard({
   ctx.fillText(`out of ${total}`, cx, cy + 142);
 
   // the mascot, wearing whatever is equipped
+  if (ops && aura) {
+    const g = ctx.createRadialGradient(912, 662, 20, 912, 662, 230);
+    g.addColorStop(0, "rgba(255,209,102,0.55)");
+    g.addColorStop(0.5, "rgba(255,154,61,0.22)");
+    g.addColorStop(1, "rgba(255,154,61,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(660, 420, 500, 500);
+    ctx.strokeStyle = "rgba(255,224,138,0.6)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(912, 662, 150, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "#ffe08a";
+    for (const [dx, dy, r] of [[-150, -40, 9], [140, -70, 7], [120, 100, 8], [-110, 110, 6], [10, -160, 8], [-60, 150, 5]]) {
+      ctx.beginPath();
+      ctx.moveTo(912 + dx, 662 + dy - r * 1.6);
+      ctx.lineTo(912 + dx + r * 0.45, 662 + dy - r * 0.45);
+      ctx.lineTo(912 + dx + r * 1.6, 662 + dy);
+      ctx.lineTo(912 + dx + r * 0.45, 662 + dy + r * 0.45);
+      ctx.lineTo(912 + dx, 662 + dy + r * 1.6);
+      ctx.lineTo(912 + dx - r * 0.45, 662 + dy + r * 0.45);
+      ctx.lineTo(912 + dx - r * 1.6, 662 + dy);
+      ctx.lineTo(912 + dx - r * 0.45, 662 + dy - r * 0.45);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
   if (ops) drawBuddy(ctx, ops, 805, 555, 215);
 
   // rank and extra line
@@ -483,6 +512,7 @@ function ShareCard({
       palette: theme && theme.palette,
       ops: buddyOps(mood, equipped),
       title: titleItem && titleItem.text,
+      aura: auraFor(equipped) === "legendary",
     }).then((c) => {
       if (!alive || !c) return;
       setCanvas(c);
@@ -777,7 +807,8 @@ function InfoPanel({ onClose }) {
 
         <h3>About</h3>
         <p>
-          Phish or Legit? is a free project by {AUTHOR}, to make scam awareness more fun. The messages are fictional,
+          Phish or Legit? is a free project by {AUTHOR}, a cyber security
+          student, to make scam awareness more fun. The messages are fictional,
           written from common scam types seen in Australia. It's for learning
           and isn't professional advice.
         </p>

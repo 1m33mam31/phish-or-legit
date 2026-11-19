@@ -196,4 +196,49 @@ describe("rewards", () => {
     expect(screen.getByText(/cases? earned/i)).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem("pol-rewards")).cases).toBeGreaterThanOrEqual(2);
   });
+
+  it("shows a charge-up, then a big reveal with an aura for a legendary prize", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "pol-rewards",
+      JSON.stringify({ cases: 1, scrap: 0, owned: {}, equipped: {}, pity: 9 })
+    );
+    await toMenu(user);
+    await user.click(screen.getByRole("button", { name: /open a case/i }));
+    // pity guarantees an Epic or better: 0.9 picks Legendary, then 0.05 picks the first one
+    vi.spyOn(Math, "random")
+      .mockReturnValueOnce(0.9)
+      .mockReturnValueOnce(0.05)
+      .mockReturnValue(0.5);
+    await user.click(screen.getByRole("button", { name: /^open case$/i }));
+    expect(screen.getByText(/cracking it open/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^skip$/i }));
+    expect(screen.getByText("LEGENDARY!")).toBeInTheDocument();
+    expect(screen.getByText(/angel halo/i, { selector: "h2" })).toBeInTheDocument();
+    expect(document.querySelector(".reveal .aura-wrap")).not.toBeNull();
+    expect(screen.getByText(/guaranteed drop from your pity counter/i)).toBeInTheDocument();
+    vi.restoreAllMocks();
+  });
+
+  it("gives the mascot an aura on the menu when it wears a legendary item", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "pol-rewards",
+      JSON.stringify({
+        cases: 0,
+        scrap: 0,
+        owned: { "hat-halo": true },
+        equipped: { hat: "hat-halo" },
+      })
+    );
+    await toMenu(user);
+    expect(document.querySelector(".rewards-strip .aura-wrap")).not.toBeNull();
+  });
+
+  it("gives no aura to a mascot without legendary items", async () => {
+    const user = userEvent.setup();
+    await toMenu(user);
+    expect(document.querySelector(".rewards-strip .aura-wrap")).toBeNull();
+  });
 });

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import Buddy from "./Buddy.jsx";
+import { memo, useEffect, useRef, useState } from "react";
+import Buddy, { Aura } from "./Buddy.jsx";
 import {
   RARITIES,
   RARITY_ORDER,
@@ -30,16 +30,17 @@ function Back() {
 }
 
 // A small picture of one item, whatever kind it is.
+// Legendary items get an aura (mascot items get theirs from the mascot itself).
 export function ItemPreview({ item, size = 64 }) {
   if (["hat", "face", "back"].includes(item.slot)) {
     return <Buddy mood="happy" equipped={{ [item.slot]: item.id }} size={size} />;
   }
+  let picture;
   if (item.slot === "stamp") {
-    return <span className={`stamp-sample ${item.id}`}>Phish</span>;
-  }
-  if (item.slot === "theme") {
+    picture = <span className={`stamp-sample ${item.id}`}>Phish</span>;
+  } else if (item.slot === "theme") {
     const p = item.palette;
-    return (
+    picture = (
       <span
         className="theme-swatch"
         style={{
@@ -50,13 +51,15 @@ export function ItemPreview({ item, size = 64 }) {
         <span style={{ background: `linear-gradient(90deg, ${p.ring0}, ${p.ring1})` }} />
       </span>
     );
+  } else {
+    picture = <span className="title-sample">{item.text}</span>;
   }
-  return <span className="title-sample">{item.text}</span>;
+  return item.rarity === "legendary" ? <Aura size={size}>{picture}</Aura> : picture;
 }
 
-function CaseArt() {
+function CaseArt({ className = "" }) {
   return (
-    <svg className="case-art" viewBox="0 0 160 140" width="160" height="140" aria-hidden="true">
+    <svg className={`case-art ${className}`} viewBox="0 0 160 140" width="160" height="140" aria-hidden="true">
       <defs>
         <linearGradient id="case-body" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#6a8bff" />
@@ -118,6 +121,10 @@ const CARD_W = 124;
 const GAP = 10;
 const STEP = CARD_W + GAP;
 
+// How long the reel holds on the winner before the reveal (more tension for rarer items)
+const HOLD = { common: 450, rare: 800, epic: 1200, legendary: 1700 };
+const SPARKS = { common: 0, rare: 12, epic: 26, legendary: 46 };
+
 function Odds() {
   return (
     <ul className="odds" aria-label="Drop rates">
@@ -131,13 +138,55 @@ function Odds() {
   );
 }
 
+const ReelCard = memo(function ReelCard({ item, state }) {
+  return (
+    <div
+      className={`reel-card ${item.rarity} ${state}`}
+      style={{ "--rc": RARITIES[item.rarity].color }}
+    >
+      <ItemPreview item={item} size={72} />
+      <span>{item.name}</span>
+    </div>
+  );
+});
+
+// Sparks that fly out from the middle when a prize is revealed
+function Burst({ count, color }) {
+  const pieces = Array.from({ length: count }, (_, i) => ({
+    angle: (i / count) * 360 + (i % 3) * 9,
+    dist: 110 + (i % 5) * 38,
+    delay: (i % 7) * 0.035,
+    size: 4 + (i % 3) * 3,
+  }));
+  return (
+    <div className="burst" aria-hidden="true" style={{ "--bc": color }}>
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          style={{
+            "--a": `${p.angle}deg`,
+            "--d": `${p.dist}px`,
+            "--dl": `${p.delay}s`,
+            width: p.size,
+            height: p.size,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function CaseScreen({ rewards, onChange, onBack, onCollection }) {
-  const [phase, setPhase] = useState("ready"); // ready, spinning, revealed
+  // ready, charging, spinning, landed, revealed
+  const [phase, setPhase] = useState("ready");
   const [result, setResult] = useState(null);
   const [reel, setReel] = useState(null);
   const [go, setGo] = useState(false);
   const [target, setTarget] = useState(0);
+  const [under, setUnder] = useState(-1);
+  const [flash, setFlash] = useState(null);
   const viewport = useRef(null);
+  const track = useRef(null);
   const [reduceMotion] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -151,14 +200,27 @@ export function CaseScreen({ rewards, onChange, onBack, onCollection }) {
     onChange(res.rewards); // saved straight away, so closing the page can't lose the prize
     setResult(res);
     setGo(false);
-    if (reduceMotion) {
-      setPhase("revealed");
-      return;
-    }
-    setReel({ ...buildReel(res.item), jitter: (Math.random() - 0.5) * 70 });
-    setPhase("spinning");
+    setUnder(-1);
+    setPhase(reduceMotion ? "revealed" : "charging");
   }
 
+  function skip() {
+    if (result) setFlash({ color: RARITIES[result.rarity].color, n: Date.now() });
+    setPhase("revealed");
+  }
+
+  // 1. the case shakes and glows, then bursts
+  useEffect(() => {
+    if (phase !== "charging" || !result) return;
+    const t = setTimeout(() => {
+      setReel({ ...buildReel(result.item), jitter: (Math.random() - 0.5) * 70 });
+      setFlash({ color: "#ffffff", n: Date.now() });
+      setPhase("spinning");
+    }, 1800);
+    return () => clearTimeout(t);
+  }, [phase, result]);
+
+  // 2. the strip spins and slows down
   useEffect(() => {
     if (phase !== "spinning" || !reel) return;
     const width = viewport.current ? viewport.current.offsetWidth : 600;
@@ -166,18 +228,65 @@ export function CaseScreen({ rewards, onChange, onBack, onCollection }) {
       setTarget(-(reel.winIndex * STEP + CARD_W / 2 - width / 2 + reel.jitter));
       setGo(true);
     }, 80);
-    const end = setTimeout(() => setPhase("revealed"), 5600);
+    const end = setTimeout(() => {
+      setUnder(reel.winIndex);
+      setPhase("landed");
+    }, 5400);
+
+    // watch which card is under the marker, so the marker can change colour as cards pass
+    let raf;
+    let last = -1;
+    const loop = () => {
+      const el = track.current;
+      if (el) {
+        const m = /matrix\(([^)]+)\)/.exec(getComputedStyle(el).transform || "");
+        const tx = m ? parseFloat(m[1].split(",")[4]) : 0;
+        const idx = Math.floor((-tx + width / 2) / STEP);
+        if (idx !== last) {
+          last = idx;
+          setUnder(idx);
+        }
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
     return () => {
       clearTimeout(start);
       clearTimeout(end);
+      cancelAnimationFrame(raf);
     };
   }, [phase, reel]);
 
+  // 3. a short pause on the winner, longer for rarer prizes
+  useEffect(() => {
+    if (phase !== "landed" || !result) return;
+    const t = setTimeout(() => {
+      setFlash({ color: RARITIES[result.rarity].color, n: Date.now() });
+      setPhase("revealed");
+    }, HOLD[result.rarity]);
+    return () => clearTimeout(t);
+  }, [phase, result]);
+
   const pityLeft = PITY_LIMIT - rewards.pity;
-  const color = result ? RARITIES[result.rarity].color : "#fff";
+  const rarity = result ? result.rarity : "common";
+  const color = RARITIES[rarity].color;
+  const strong = rarity === "epic" || rarity === "legendary";
+  const underItem = reel && under >= 0 ? reel.items[under] : null;
+  const underColor = underItem ? RARITIES[underItem.rarity].color : "#ffffff";
+  const shaking = phase === "revealed" && strong ? `shake-${rarity}` : "";
 
   return (
-    <main className="screen narrow cases">
+    <main className={`screen narrow cases ${shaking}`}>
+      {flash && (
+        <div
+          key={flash.n}
+          className={`flash-burst ${rarity === "legendary" ? "big" : ""}`}
+          style={{ "--fc": flash.color }}
+          aria-hidden="true"
+        />
+      )}
+
       <header className="topbar">
         <button className="link" onClick={onBack}>
           <Back />
@@ -212,36 +321,75 @@ export function CaseScreen({ rewards, onChange, onBack, onCollection }) {
         </div>
       )}
 
-      {phase === "spinning" && reel && (
+      {phase === "charging" && (
+        <div className="case-charge">
+          <div className="charge-stage">
+            <div className="charge-rays" aria-hidden="true" />
+            <CaseArt className="charging" />
+          </div>
+          <p className="case-note" role="status">Cracking it open...</p>
+          <div className="charge-bar" aria-hidden="true">
+            <span />
+          </div>
+          <button className="ghost" onClick={skip}>
+            Skip
+          </button>
+        </div>
+      )}
+
+      {(phase === "spinning" || phase === "landed") && reel && (
         <div className="case-spin">
-          <div className="reel" ref={viewport} aria-hidden="true">
+          <div
+            className={`reel ${phase}`}
+            ref={viewport}
+            aria-hidden="true"
+            style={{ "--uc": underColor }}
+          >
             <div className="reel-marker" />
             <div
               className="reel-track"
+              ref={track}
               style={{
                 transform: `translateX(${go ? target : 0}px)`,
                 transition: go ? "transform 5.2s cubic-bezier(0.08, 0.72, 0.1, 1)" : "none",
               }}
             >
               {reel.items.map((it, i) => (
-                <div key={i} className="reel-card" style={{ "--rc": RARITIES[it.rarity].color }}>
-                  <ItemPreview item={it} size={72} />
-                  <span>{it.name}</span>
-                </div>
+                <ReelCard
+                  key={i}
+                  item={it}
+                  state={
+                    phase === "landed" && i === reel.winIndex
+                      ? "won"
+                      : i === under
+                        ? "under"
+                        : ""
+                  }
+                />
               ))}
             </div>
           </div>
-          <p className="case-note" role="status">Opening your case...</p>
-          <button className="ghost" onClick={() => setPhase("revealed")}>
+          <p className="reel-now" aria-hidden="true" style={{ color: underColor }}>
+            {underItem ? underItem.name : "\u00a0"}
+          </p>
+          <p className="case-note" role="status">
+            {phase === "landed" ? "Here it comes..." : "Opening your case..."}
+          </p>
+          <button className="ghost" onClick={skip}>
             Skip
           </button>
         </div>
       )}
 
       {phase === "revealed" && result && (
-        <div className="reveal" style={{ "--rc": color }}>
+        <div className={`reveal r-${rarity}`} style={{ "--rc": color }}>
           <div className="reveal-glow" aria-hidden="true" />
-          <p className="reveal-rarity">{RARITIES[result.rarity].label}</p>
+          {strong && <div className="rays" aria-hidden="true" />}
+          {SPARKS[rarity] > 0 && <Burst count={SPARKS[rarity]} color={color} />}
+          {strong && (
+            <p className="reveal-banner">{RARITIES[rarity].label.toUpperCase()}!</p>
+          )}
+          <p className="reveal-rarity">{RARITIES[rarity].label}</p>
           <div className="reveal-item">
             <ItemPreview item={result.item} size={150} />
           </div>
@@ -337,7 +485,7 @@ export function CollectionScreen({ rewards, onChange, onBack, onOpen }) {
           return (
             <li
               key={item.id}
-              className={`item ${owned ? "owned" : "locked"}`}
+              className={`item ${owned ? "owned" : "locked"} ${item.rarity}`}
               style={{ "--rc": RARITIES[item.rarity].color }}
             >
               <div className="item-preview">
