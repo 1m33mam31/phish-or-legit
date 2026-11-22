@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App.jsx";
@@ -165,7 +165,7 @@ describe("rewards", () => {
     await toMenu(user);
     await user.click(screen.getByRole("button", { name: /^collection$/i }));
     expect(screen.getByRole("heading", { name: /^collection$/i })).toBeInTheDocument();
-    expect(screen.getByText(/1 of 24 items collected/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 of 47 items collected/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /^equip$/i }));
     expect(JSON.parse(localStorage.getItem("pol-rewards")).equipped.hat).toBe("hat-cap");
@@ -240,5 +240,67 @@ describe("rewards", () => {
     const user = userEvent.setup();
     await toMenu(user);
     expect(document.querySelector(".rewards-strip .aura-wrap")).toBeNull();
+  });
+});
+
+describe("animations setting", () => {
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  function deviceWantsLessMotion() {
+    window.matchMedia = (query) => ({
+      matches: /reduce/.test(query),
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+    });
+  }
+
+  async function toCaseScreen(user) {
+    await openMenu(user);
+    await user.click(screen.getByRole("button", { name: /open a case/i }));
+  }
+
+  it("opens cases instantly when the device asks for less motion", async () => {
+    deviceWantsLessMotion();
+    const user = userEvent.setup();
+    await toCaseScreen(user);
+    expect(screen.getByText(/animations turned off/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^open case$/i }));
+    expect(screen.queryByText(/cracking it open/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/new item added to your collection/i)).toBeInTheDocument();
+  });
+
+  it("lets the player switch on the full spin and remembers it", async () => {
+    deviceWantsLessMotion();
+    const user = userEvent.setup();
+    await toCaseScreen(user);
+    await user.click(screen.getByRole("button", { name: /play full animations/i }));
+    expect(localStorage.getItem("pol-fx")).toBe('"full"');
+    expect(document.documentElement.dataset.fx).toBe("full");
+    expect(screen.getByText(/full animations are on/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^open case$/i }));
+    expect(screen.getByText(/cracking it open/i)).toBeInTheDocument();
+  });
+
+  it("can go back to following the device setting", async () => {
+    deviceWantsLessMotion();
+    const user = userEvent.setup();
+    await toCaseScreen(user);
+    await user.click(screen.getByRole("button", { name: /play full animations/i }));
+    await user.click(screen.getByRole("button", { name: /use my device setting/i }));
+    expect(localStorage.getItem("pol-fx")).toBe('"auto"');
+    expect(screen.getByText(/animations turned off/i)).toBeInTheDocument();
+  });
+
+  it("shows no switch when the device has no preference", async () => {
+    const user = userEvent.setup();
+    await toCaseScreen(user);
+    expect(screen.queryByText(/animations turned off/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /play full animations/i })).not.toBeInTheDocument();
   });
 });

@@ -8,4 +8,5 @@ HTMLCanvasElement.prototype.getContext = () => null;
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  delete document.documentElement.dataset.fx;
 });

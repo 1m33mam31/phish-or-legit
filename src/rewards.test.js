@@ -28,8 +28,8 @@ import {
 import { buddyOps, moodForScore } from "./Buddy.jsx";
 
 describe("items", () => {
-  it("has 24 droppable items with unique ids", () => {
-    expect(DROPS).toHaveLength(24);
+  it("has 47 droppable items with unique ids", () => {
+    expect(DROPS).toHaveLength(47);
     expect(new Set(ITEMS.map((i) => i.id)).size).toBe(ITEMS.length);
   });
 
@@ -295,5 +295,32 @@ describe("legendary aura", () => {
     expect(auraFor({ face: "face-sparkle" })).toBe("legendary");
     // legendary stamps, themes and titles do not change the mascot
     expect(auraFor({ stamp: "stamp-holo", theme: "theme-aurora", title: "title-legend" })).toBeNull();
+  });
+});
+
+describe("the full item list", () => {
+  it("has the right number of items in each type", () => {
+    const count = (slot) => DROPS.filter((i) => i.slot === slot).length;
+    expect(count("hat")).toBe(10);
+    expect(count("face")).toBe(7);
+    expect(count("back")).toBe(6);
+    expect(count("stamp")).toBe(7);
+    expect(count("theme")).toBe(8);
+    expect(count("title")).toBe(9);
+  });
+
+  it("has the right number of items in each rarity", () => {
+    const count = (r) => DROPS.filter((i) => i.rarity === r).length;
+    expect(count("common")).toBe(14);
+    expect(count("rare")).toBe(12);
+    expect(count("epic")).toBe(11);
+    expect(count("legendary")).toBe(10);
+  });
+
+  it("gives an aura for every legendary mascot item", () => {
+    for (const id of ["hat-halo", "hat-flame", "face-sparkle", "face-laser", "back-dragon"]) {
+      const slot = ITEMS_BY_ID[id].slot;
+      expect(auraFor({ [slot]: id })).toBe("legendary");
+    }
   });
 });

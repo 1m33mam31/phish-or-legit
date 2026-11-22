@@ -454,14 +454,17 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .case-art,
-  .reveal,
-  .reveal-glow,
-  .reveal-item,
-  .buddy-pop,
-  .stamp.stamp-holo {
+  :root:not([data-fx="full"]) .case-art,
+  :root:not([data-fx="full"]) .reveal,
+  :root:not([data-fx="full"]) .reveal-glow,
+  :root:not([data-fx="full"]) .reveal-item,
+  :root:not([data-fx="full"]) .buddy-pop,
+  :root:not([data-fx="full"]) .stamp.stamp-fire,
+  :root:not([data-fx="full"]) .stamp.stamp-glitch,
+  :root:not([data-fx="full"]) .stamp.stamp-holo {
     animation: none;
   }
+
 }
 
 /* cases earned banner on the results screen */
@@ -811,28 +814,104 @@
 
 /* ---------- reduced motion: no charge-up, flashes, shakes or movement ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .charge-rays,
-  .case-art.charging,
-  .charge-bar span,
-  .reel.landed,
-  .reel-card.won,
-  .flash-burst,
-  .cases.shake-epic,
-  .cases.shake-legendary,
-  .rays,
-  .burst span,
-  .reveal-banner,
-  .r-legendary .reveal-name,
-  .aura-glow,
-  .aura-ring,
-  .aura-orbit,
-  .aura-spark,
-  .item.legendary {
+  :root:not([data-fx="full"]) .charge-rays,
+  :root:not([data-fx="full"]) .case-art.charging,
+  :root:not([data-fx="full"]) .charge-bar span,
+  :root:not([data-fx="full"]) .reel.landed,
+  :root:not([data-fx="full"]) .reel-card.won,
+  :root:not([data-fx="full"]) .flash-burst,
+  :root:not([data-fx="full"]) .cases.shake-epic,
+  :root:not([data-fx="full"]) .cases.shake-legendary,
+  :root:not([data-fx="full"]) .rays,
+  :root:not([data-fx="full"]) .burst span,
+  :root:not([data-fx="full"]) .reveal-banner,
+  :root:not([data-fx="full"]) .r-legendary .reveal-name,
+  :root:not([data-fx="full"]) .aura-glow,
+  :root:not([data-fx="full"]) .aura-ring,
+  :root:not([data-fx="full"]) .aura-orbit,
+  :root:not([data-fx="full"]) .aura-spark,
+  :root:not([data-fx="full"]) .item.legendary {
     animation: none;
   }
-  .flash-burst,
-  .burst,
-  .aura-orbit {
+  :root:not([data-fx="full"]) .flash-burst,
+  :root:not([data-fx="full"]) .burst,
+  :root:not([data-fx="full"]) .aura-orbit {
     display: none;
   }
+
+}
+
+/* ---------- more stamp styles ---------- */
+.stamp.stamp-pixel,
+.stamp-sample.stamp-pixel {
+  color: #ffd166;
+  font-family: ui-monospace, "Courier New", monospace;
+  letter-spacing: 0.14em;
+  background: #1b1450;
+  border: 3px solid #ffd166;
+  border-radius: 2px;
+  box-shadow: 4px 4px 0 #000;
+  text-shadow: 2px 2px 0 #000;
+}
+.stamp.stamp-pixel.is-legit {
+  color: #7dffc3;
+  border-color: #7dffc3;
+  box-shadow: 4px 4px 0 #000;
+}
+.stamp.stamp-glitch,
+.stamp-sample.stamp-glitch {
+  color: #fff;
+  background: rgba(9, 13, 22, 0.6);
+  border: 3px solid #fff;
+  text-shadow: 2px 0 #ff2d6f, -2px 0 #2dd4ff;
+  box-shadow: 3px 0 #ff2d6f, -3px 0 #2dd4ff;
+}
+.stamp.stamp-glitch {
+  animation:
+    slam 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) backwards,
+    glitch 1.6s steps(1) 0.5s infinite;
+}
+@keyframes glitch {
+  0%, 100% { translate: 0 0; }
+  90% { translate: 3px 0; }
+  93% { translate: -3px 1px; }
+  96% { translate: 2px -1px; }
+}
+.stamp.stamp-fire,
+.stamp-sample.stamp-fire {
+  color: #ffd166;
+  background: linear-gradient(180deg, rgba(255, 122, 47, 0.35), rgba(193, 39, 63, 0.25));
+  border: 3px solid #ff7a2f;
+  text-shadow: 0 -2px 8px #ff7a2f, 0 0 14px #e0531a;
+  box-shadow: 0 0 22px #ff7a2f, 0 -8px 22px rgba(255, 209, 102, 0.5);
+}
+.stamp.stamp-fire {
+  animation:
+    slam 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) backwards,
+    fireFlicker 1.2s ease-in-out 0.5s infinite;
+}
+@keyframes fireFlicker {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.28); }
+}
+
+/* ---------- animations switch ---------- */
+.fx-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  max-width: 460px;
+  margin: 1rem auto 0;
+  padding: 0.7rem 0.9rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: left;
+  background: rgba(122, 162, 255, 0.08);
+  border: 1px solid rgba(122, 162, 255, 0.35);
+  border-radius: 14px;
+}
+.fx-toggle p {
+  margin: 0;
 }

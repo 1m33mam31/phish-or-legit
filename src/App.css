@@ -1154,20 +1154,21 @@ a:focus-visible {
 
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .layer,
-  .front,
-  .results,
-  .results .rank-emoji,
-  .info-backdrop,
-  .info-panel {
+  :root:not([data-fx="full"]) .layer,
+  :root:not([data-fx="full"]) .front,
+  :root:not([data-fx="full"]) .results,
+  :root:not([data-fx="full"]) .results .rank-emoji,
+  :root:not([data-fx="full"]) .info-backdrop,
+  :root:not([data-fx="full"]) .info-panel {
     animation: none;
   }
-  .confetti {
+  :root:not([data-fx="full"]) .confetti {
     display: none;
   }
-  * {
+  :root:not([data-fx="full"]) * {
     transition: none !important;
   }
+
 }
 
 /* =========================================================
@@ -1602,22 +1603,23 @@ body::before {
 
 /* ---------- motion switches for the new bits ---------- */
 @media (prefers-reduced-motion: reduce) {
-  body::before,
-  .intro-demo .deck,
-  .demo-answers .answer.phish,
-  .segments .now,
-  .meta-stats .score-pop,
-  .meta-stats .streak,
-  .feedback {
+  :root:not([data-fx="full"]) body::before,
+  :root:not([data-fx="full"]) .intro-demo .deck,
+  :root:not([data-fx="full"]) .demo-answers .answer.phish,
+  :root:not([data-fx="full"]) .segments .now,
+  :root:not([data-fx="full"]) .meta-stats .score-pop,
+  :root:not([data-fx="full"]) .meta-stats .streak,
+  :root:not([data-fx="full"]) .feedback {
     animation: none;
   }
-  .stamp {
+  :root:not([data-fx="full"]) .stamp {
     animation: none;
     opacity: 1;
   }
-  .flash {
+  :root:not([data-fx="full"]) .flash {
     display: none;
   }
+
 }
 
 /* =========================================================
@@ -1731,12 +1733,13 @@ body::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stamp,
-  .intro-demo .deck.hit,
-  .demo-feedback,
-  .cta.nudge {
+  :root:not([data-fx="full"]) .stamp,
+  :root:not([data-fx="full"]) .intro-demo .deck.hit,
+  :root:not([data-fx="full"]) .demo-feedback,
+  :root:not([data-fx="full"]) .cta.nudge {
     animation: none;
   }
+
 }
 
 /* demo feedback: the main button is now inside the card */
@@ -1909,9 +1912,10 @@ body::before {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .newbadge {
+  :root:not([data-fx="full"]) .newbadge {
     animation: none;
   }
+
 }
 
 /* a 50 question run needs thinner progress segments */

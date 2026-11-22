@@ -19,6 +19,7 @@ import {
   oddsTable,
   canClaimFreeCase,
 } from "./rewards.js";
+import { motionReduced, systemPrefersReducedMotion, getFx, setFx } from "./motion.js";
 import "./rewards.css";
 
 function Back() {
@@ -176,6 +177,32 @@ function Burst({ count, color }) {
   );
 }
 
+// Shown only when the device asks for less motion (or when the player chose full animations).
+function FxToggle() {
+  const [fx, setFxState] = useState(getFx);
+  const full = fx === "full";
+  if (!full && !systemPrefersReducedMotion()) return null;
+  return (
+    <div className="fx-toggle">
+      <p>
+        {full
+          ? "Full animations are on for this game."
+          : "Your device has animations turned off, so cases open instantly."}
+      </p>
+      <button
+        className="ghost small"
+        onClick={() => {
+          const next = full ? "auto" : "full";
+          setFx(next);
+          setFxState(next);
+        }}
+      >
+        {full ? "Use my device setting" : "Play full animations"}
+      </button>
+    </div>
+  );
+}
+
 export function CaseScreen({ rewards, onChange, onBack, onCollection }) {
   // ready, charging, spinning, landed, revealed
   const [phase, setPhase] = useState("ready");
@@ -187,13 +214,6 @@ export function CaseScreen({ rewards, onChange, onBack, onCollection }) {
   const [flash, setFlash] = useState(null);
   const viewport = useRef(null);
   const track = useRef(null);
-  const [reduceMotion] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      Boolean(window.matchMedia) &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-
   function openCase() {
     const res = rollCase(rewards);
     if (!res) return;
@@ -201,7 +221,7 @@ export function CaseScreen({ rewards, onChange, onBack, onCollection }) {
     setResult(res);
     setGo(false);
     setUnder(-1);
-    setPhase(reduceMotion ? "revealed" : "charging");
+    setPhase(motionReduced() ? "revealed" : "charging");
   }
 
   function skip() {
@@ -311,6 +331,7 @@ export function CaseScreen({ rewards, onChange, onBack, onCollection }) {
           {rewards.cases < 1 && (
             <p className="case-note">Finish a round or claim your free daily case to earn more.</p>
           )}
+          <FxToggle />
           <p className="pity">
             {pityLeft === 1
               ? "Your next case is guaranteed to be Epic or better."

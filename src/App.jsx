@@ -21,6 +21,7 @@ import {
   evaluateBadges,
 } from "./logic.js";
 import "./App.css";
+import { applyFx, getFx, motionReduced } from "./motion.js";
 import Buddy, { buddyOps, drawBuddy, moodForScore } from "./Buddy.jsx";
 import { RewardsStrip, CaseScreen, CollectionScreen } from "./Rewards.jsx";
 import {
@@ -31,6 +32,8 @@ import {
   addCases,
   claimFreeCase,
 } from "./rewards.js";
+
+applyFx(getFx());
 
 const AUTHOR = "Ralph"; // shown in the About section, change it if you like
 const REPO_URL = "https://github.com/1m33mam31/phish-or-legit";
@@ -342,6 +345,17 @@ async function drawShareCard({
     ctx.stroke();
   }
 
+  if (pal.stars) {
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 90; i++) {
+      ctx.fillStyle = `rgba(255,255,255,${0.35 + rnd() * 0.65})`;
+      ctx.beginPath();
+      ctx.arc(rnd() * W, rnd() * H, 0.8 + rnd() * 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
   // logo badge and title
   ctx.save();
   ctx.translate(80, 76);
@@ -644,12 +658,7 @@ function Scenario({ item, revealed }) {
 function InboxStack({ items }) {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [reduceMotion] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      Boolean(window.matchMedia) &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
+  const [reduceMotion] = useState(() => motionReduced());
 
   useEffect(() => {
     if (paused || reduceMotion || items.length < 2) return;
