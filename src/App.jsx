@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useId } from "react";
 import "@fontsource-variable/bricolage-grotesque";
+import { Analytics } from "@vercel/analytics/react";
 import {
   scenarios,
   MODES,
@@ -1445,6 +1446,7 @@ export default function App() {
     current.answer === "phish" ? current.redFlags : current.safeSigns;
 
   return (
+    <>
     <main className="screen narrow">
       <header className="topbar">
         <button className="link" onClick={backToMenu}>
@@ -1662,5 +1664,7 @@ export default function App() {
         </div>
       )}
     </main>
+    <Analytics />
+    </>
   );
 }
